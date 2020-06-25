@@ -1,0 +1,103 @@
+buildscript {
+  repositories {
+    mavenLocal() //FIXME: nicht einchecken
+    jcenter()
+  }
+
+  dependencies {
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72"
+      classpath 'dev.fritz2:fritz2-gradle-plugin:0.6'
+  }
+}
+
+plugins {
+    id 'org.jetbrains.kotlin.multiplatform' version '1.3.72'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.3.72'
+//    id 'dev.fritz2.fritz2-gradle' version '0.5'
+}
+
+apply plugin: 'dev.fritz2.fritz2-gradle'
+
+repositories {
+    jcenter()
+    mavenCentral()
+    mavenLocal()
+}
+
+def ktor_version = '1.3.2'
+def logback_version = '1.2.3'
+def serialization_version = '0.20.0'
+
+kotlin {
+    jvm {
+        compilations.main {
+            tasks.getByName(processResourcesTaskName) {
+                dependsOn(jsBrowserWebpack)
+//                    from(new File(jsBrowserWebpack.name, jsBrowserWebpack.outputPath))
+            }
+        }
+    }
+    js {
+        browser {
+        }
+    }
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation kotlin('stdlib-common')
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation kotlin('test-common')
+                implementation kotlin('test-annotations-common')
+            }
+        }
+        jvmMain {
+            dependencies {
+                implementation kotlin('stdlib-jdk8')
+                implementation "io.ktor:ktor-server-netty:$ktor_version"
+                implementation "io.ktor:ktor-serialization:$ktor_version"
+                implementation "ch.qos.logback:logback-classic:$logback_version"
+
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
+
+                implementation "org.jetbrains.exposed:exposed-core:0.22.1"
+                implementation "org.jetbrains.exposed:exposed-dao:0.22.1"
+                implementation "org.jetbrains.exposed:exposed-jdbc:0.22.1"
+                implementation 'com.h2database:h2:1.4.200'
+            }
+        }
+        jvmTest {
+            dependencies {
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
+            }
+        }
+        jsMain {
+            dependencies {
+                implementation kotlin('stdlib-js')
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$serialization_version"
+            }
+        }
+        jsTest {
+            dependencies {
+                implementation kotlin('test-js')
+            }
+        }
+    }
+}
+
+// copies the compile js file to static resources
+jvmJar {
+    dependsOn(jsBrowserProductionWebpack)
+    from(new File(jsBrowserProductionWebpack.entry.name, jsBrowserProductionWebpack.outputPath))
+}
+
+task run(type: JavaExec, dependsOn: [jvmJar]) {
+    group = "application"
+    main = "app.backend.MainKt"
+    classpath(configurations.jvmRuntimeClasspath, jvmJar)
+    args = []
+}
