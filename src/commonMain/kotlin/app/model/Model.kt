@@ -7,8 +7,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Lenses
 data class ToDo(
-    val text: String,
     val id: String = uniqueId(),
+    val text: String = "",
     val completed: Boolean = false,
     val editing: Boolean = false
 )
