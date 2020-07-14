@@ -1,10 +1,9 @@
 package app.database
 
 import app.model.ToDo
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object ToDos : LongIdTable() {
@@ -36,12 +35,25 @@ object ToDos : LongIdTable() {
         }.value.toString())
     }
 
+    fun replace(id: String, toDo: ToDo): ToDo = database {
+        ToDos.update({ ToDos.id eq id.toLong() }) {
+            it[text] = toDo.text
+            it[completed] = toDo.completed
+            it[editing] = toDo.editing
+        }
+        toDo
+    }
+
     fun remove(id: String) {
         database {
             ToDos.deleteWhere {
-                ToDos.id.eq(id.toLong())
+                ToDos.id eq id.toLong()
             }
         }
+    }
+
+    fun exists(id: String): Boolean = database {
+        ToDos.select(ToDos.id eq id.toLong()).count() > 0
     }
 }
 

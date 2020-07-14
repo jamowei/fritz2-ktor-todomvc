@@ -65,26 +65,26 @@ fun Application.main() {
                 environment.log.info("save new ToDo: $toDo")
                 call.respond(HttpStatusCode.Created, ToDos.add(toDo))
             }
+            put("/todos/{id}") {
+                val id = call.parameters["id"]
+                val toDo = call.receive<ToDo>()
+                if (id != null && ToDos.exists(id)) {
+                    environment.log.info("replace ToDo with id: $id")
+                    call.respond(HttpStatusCode.Created, ToDos.replace(id, toDo))
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid id"))
+                }
+            }
             delete("/todos/{id}") {
                 val id = call.parameters["id"]
-                if(id != null) {
+                if(id != null && ToDos.exists(id)) {
                     environment.log.info("remove ToDo with id: $id")
                     ToDos.remove(id)
                     call.respond(HttpStatusCode.Created)
                 } else {
-                    call.respond(HttpStatusCode.BadRequest)
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid id"))
                 }
             }
-//            patch("/todos/{id}") {
-//                val id = call.parameters["id"]
-//                if (id != null) {
-//                    environment.log.info("remove ToDo with id: $id")
-//                    ToDos.remove(id)
-//                    call.respond(HttpStatusCode.Created)
-//                } else {
-//                    call.respond(HttpStatusCode.BadRequest)
-//                }
-//            }
         }
     }
 }

@@ -1,22 +1,8 @@
-//buildscript {
-//  repositories {
-//    mavenLocal() //FIXME: nicht einchecken
-//    jcenter()
-//  }
-//
-//  dependencies {
-//      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72"
-//      classpath 'dev.fritz2:fritz2-gradle-plugin:0.6'
-//  }
-//}
-
 plugins {
     id 'org.jetbrains.kotlin.multiplatform' version '1.3.72'
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.3.72'
-    id 'dev.fritz2.fritz2-gradle' version '0.5'
+    id 'dev.fritz2.fritz2-gradle' version '0.6'
 }
-
-//apply plugin: 'dev.fritz2.fritz2-gradle'
 
 repositories {
     jcenter()
@@ -41,6 +27,13 @@ kotlin {
     js {
         browser {
             runTask {
+//                devServer = KotlinWebpackConfig.DevServer(
+//                        open = true,
+//                        port = 3000,
+//                        proxy = [api: 'http://localhost:8080/api'],
+//                        contentBase = ["$buildDir/distributions"]
+//                )
+
 //                devServer {
 //                    enabled = true
 //                    open = true
@@ -59,7 +52,6 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
-                implementation "dev.fritz2:core:0.6"
                 implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
             }
         }
