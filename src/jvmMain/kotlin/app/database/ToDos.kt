@@ -14,7 +14,7 @@ object ToDos : LongIdTable() {
     @ExperimentalStdlibApi
     fun getAll(): List<ToDo> = buildList {
         database {
-            ToDos.slice(ToDos.id, text, completed, editing).selectAll().forEach {
+            ToDos.selectAll().forEach {
                 add(
                     ToDo(
                         id = it[ToDos.id].value.toString(),
@@ -42,6 +42,10 @@ object ToDos : LongIdTable() {
             it[editing] = toDo.editing
         }
         toDo
+    }
+
+    fun replaceAll(toDos: List<ToDo>): List<ToDo> = toDos.map {
+        replace(it.id, it)
     }
 
     fun remove(id: String) {

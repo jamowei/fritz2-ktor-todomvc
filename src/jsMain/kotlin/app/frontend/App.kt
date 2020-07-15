@@ -14,11 +14,13 @@ import dev.fritz2.remote.body
 import dev.fritz2.remote.onErrorLog
 import dev.fritz2.remote.remote
 import dev.fritz2.routing.router
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.builtins.list
 import kotlinx.serialization.json.Json
+import kotlin.time.ExperimentalTime
 
 data class Filter(val text: String, val function: (List<ToDo>) -> List<ToDo>)
 
@@ -28,6 +30,7 @@ val filters = mapOf(
     "/completed" to Filter("Completed") { toDos -> toDos.filter { it.completed } }
 )
 
+@ExperimentalTime
 @UnstableDefault
 @ExperimentalCoroutinesApi
 @FlowPreview
@@ -38,7 +41,7 @@ fun main() {
 
     val toDos = object : RootStore<List<ToDo>>(listOf(), dropInitialData = true) {
 
-        val load = apply<Unit, List<ToDo>> { _ ->
+        val load = apply<List<ToDo>> {
             api.get().onErrorLog().body().map {
                 Json.parse(serializer.list, it)
             }
@@ -51,10 +54,9 @@ fun main() {
                     .post().onErrorLog().body().map {
                         Json.parse(serializer, it)
                     }
-            }
-            else flowOf(null)
+            } else flowOf(null)
         } andThen handle { toDos, toDo ->
-            if(toDo != null) toDos + toDo else toDos
+            if (toDo != null) toDos + toDo else toDos
         }
 
         val remove = apply<String, String> { id ->
@@ -63,9 +65,15 @@ fun main() {
             toDos.filterNot { it.id == id }
         }
 
-        val toggleAll = handle<Boolean> { toDos, toggle ->
-            toDos.map { it.copy(completed = toggle) }
-        }
+        val toggleAll = apply<Boolean, List<ToDo>> { toggle ->
+            data.take(1).flatMapConcat { toDos ->
+                api.contentType("application/json")
+                    .body(Json.stringify(serializer.list, toDos.map { it.copy(completed = toggle) }))
+                    .put().onErrorLog().body().map {
+                        Json.parse(serializer.list, it)
+                    }
+            }
+        } andThen update
 
         val clearCompleted = handle { toDos ->
             toDos.filterNot { it.completed }
@@ -104,7 +112,7 @@ fun main() {
             }
             ul("todo-list") {
                 toDos.data.flatMapLatest { all ->
-                    router.routes. map { route ->
+                    router.routes.map { route ->
                         filters[route]?.function?.invoke(all) ?: all
                     }
                 }.each(ToDo::id).map { toDo ->

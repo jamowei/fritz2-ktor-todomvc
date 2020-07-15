@@ -65,15 +65,10 @@ fun Application.main() {
                 environment.log.info("save new ToDo: $toDo")
                 call.respond(HttpStatusCode.Created, ToDos.add(toDo))
             }
-            put("/todos/{id}") {
-                val id = call.parameters["id"]
-                val toDo = call.receive<ToDo>()
-                if (id != null && ToDos.exists(id)) {
-                    environment.log.info("replace ToDo with id: $id")
-                    call.respond(HttpStatusCode.Created, ToDos.replace(id, toDo))
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid id"))
-                }
+            put("/todos") {
+                val toDos = call.receive<List<ToDo>>()
+                environment.log.info("replaceAll ToDos with this: $toDos")
+                call.respond(HttpStatusCode.Created, ToDos.replaceAll(toDos))
             }
             delete("/todos/{id}") {
                 val id = call.parameters["id"]
