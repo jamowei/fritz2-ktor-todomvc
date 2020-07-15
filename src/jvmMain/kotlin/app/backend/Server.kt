@@ -1,7 +1,6 @@
 package app.backend
 
-import app.database.ToDos
-import app.database.database
+import app.database.*
 import app.model.ToDo
 import io.ktor.application.Application
 import io.ktor.application.call
@@ -43,7 +42,6 @@ fun Application.main() {
 //            ToDos.batchInsert(todos) {
 //                this[ToDos.text] = it.text
 //                this[ToDos.completed] = it.completed
-//                this[ToDos.editing] = it.editing
 //            }
 //        }
 //    }
