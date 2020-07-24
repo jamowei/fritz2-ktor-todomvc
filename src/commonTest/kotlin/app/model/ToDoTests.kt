@@ -6,7 +6,7 @@ import kotlin.test.assertTrue
 class ToDoTests {
     @Test
     fun testToDoValidator() {
-        val validator = ToDoValidator()
+        val validator = ToDoValidator
 
         assertTrue(
             validator.validate(ToDo(text = " start with space"), Unit).size == 1,
