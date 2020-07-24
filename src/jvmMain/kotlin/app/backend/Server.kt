@@ -1,8 +1,13 @@
 package app.backend
 
-import app.database.*
+import app.database.ToDoDB
+import app.database.ToDoEntity
+import app.database.ToDosTable
+import app.database.database
 import app.model.ToDo
+import app.model.ToDoValidator
 import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
@@ -32,19 +37,27 @@ fun Application.main() {
     Database.connect("jdbc:h2:mem:regular;DB_CLOSE_DELAY=-1;", "org.h2.Driver")
 
     database {
-        SchemaUtils.create(ToDos)
+        SchemaUtils.create(ToDosTable)
     }
 
-//    launch {
-//        val todos = listOf(ToDo(text = "build good programs"), ToDo(text = "testing"))
-//
-//        database {
-//            ToDos.batchInsert(todos) {
-//                this[ToDos.text] = it.text
-//                this[ToDos.completed] = it.completed
-//            }
-//        }
-//    }
+    suspend fun doWhenValid(call: ApplicationCall, toDo: ToDo, run: (ToDo) -> ToDo) {
+        if (ToDoValidator.isValid(toDo, Unit)) {
+            call.respond(HttpStatusCode.Created, run(toDo))
+        } else {
+            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "data is not valid"))
+        }
+    }
+
+    suspend fun doWhenExists(call: ApplicationCall, run: (ToDoEntity) -> Unit) {
+        val id = call.parameters["id"]?.toLongOrNull()
+        val toDo = ToDoDB.single(id)
+        if (toDo != null) {
+            run(toDo)
+            call.respond(HttpStatusCode.Created)
+        } else {
+            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid id"))
+        }
+    }
 
     routing {
         get("/") {
@@ -56,26 +69,26 @@ fun Application.main() {
         route("/api") {
             get("/todos") {
                 environment.log.info("getting all ToDos")
-                call.respond(ToDos.getAll())
+                call.respond(ToDoDB.all())
             }
             post("/todos") {
                 val toDo = call.receive<ToDo>()
-                environment.log.info("save new ToDo: $toDo")
-                call.respond(HttpStatusCode.Created, ToDos.add(toDo))
+                doWhenValid(call, toDo) {
+                    environment.log.info("save new ToDo: $toDo")
+                    ToDoDB.add(toDo)
+                }
             }
-            put("/todos") {
-                val toDos = call.receive<List<ToDo>>()
-                environment.log.info("replaceAll ToDos with this: $toDos")
-                call.respond(HttpStatusCode.Created, ToDos.replaceAll(toDos))
+            put("/todos/{id}") {
+                val toDo = call.receive<ToDo>()
+                doWhenExists(call) {
+                    environment.log.info("update ToDo with id: $it")
+                    ToDoDB.update(it, toDo)
+                }
             }
             delete("/todos/{id}") {
-                val id = call.parameters["id"]
-                if(id != null && ToDos.exists(id)) {
-                    environment.log.info("remove ToDo with id: $id")
-                    ToDos.remove(id)
-                    call.respond(HttpStatusCode.Created)
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid id"))
+                doWhenExists(call) {
+                    environment.log.info("remove ToDo with id: $it")
+                    ToDoDB.remove(it)
                 }
             }
         }
