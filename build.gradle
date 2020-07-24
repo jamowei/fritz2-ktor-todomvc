@@ -7,13 +7,18 @@ plugins {
 repositories {
     jcenter()
     mavenCentral()
-    mavenLocal()
+    // FIXME: remove if fritz2 0.7 is released
+    maven {
+        url 'https://oss.jfrog.org/artifactory/jfrog-dependencies'
+    }
 }
 
+def fritz2_version = '0.7-SNAPSHOT'
 def ktor_version = '1.3.2'
 def logback_version = '1.2.3'
 def serialization_version = '0.20.0'
 def exposed_version = '0.22.1'
+def h2_version = '1.4.200'
 
 kotlin {
     jvm {
@@ -24,35 +29,14 @@ kotlin {
             }
         }
     }
-    js {
-        browser {
-            runTask {
-//                devServer = KotlinWebpackConfig.DevServer(
-//                        open = true,
-//                        port = 3000,
-//                        proxy = [api: 'http://localhost:8080/api'],
-//                        contentBase = ["$buildDir/distributions"]
-//                )
+    js().browser()
 
-//                devServer {
-//                    enabled = true
-//                    open = true
-//                    inline = true
-//                    watch = true
-//                    port = 9000
-////                    contentBase = ["$projectDir/src/jsMain/resources"]
-//                    proxy = {
-//                        url = "http://localhost:8080/api"
-//                    }
-//                }
-            }
-        }
-    }
     sourceSets {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
                 implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
+                implementation "dev.fritz2:core:$fritz2_version"
             }
         }
         commonTest {
@@ -73,7 +57,7 @@ kotlin {
                 implementation "org.jetbrains.exposed:exposed-core:$exposed_version"
                 implementation "org.jetbrains.exposed:exposed-dao:$exposed_version"
                 implementation "org.jetbrains.exposed:exposed-jdbc:$exposed_version"
-                implementation 'com.h2database:h2:1.4.200'
+                implementation "com.h2database:h2:$h2_version"
             }
         }
         jvmTest {
