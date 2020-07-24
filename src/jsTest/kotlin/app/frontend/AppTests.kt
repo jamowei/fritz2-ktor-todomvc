@@ -3,9 +3,9 @@ package app.frontend
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class MainTests {
+class AppTests {
     @Test
-    fun testHello() {
+    fun testApp() {
         assertTrue(true)
     }
 }
