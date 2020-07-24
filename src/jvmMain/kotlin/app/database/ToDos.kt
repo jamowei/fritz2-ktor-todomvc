@@ -32,7 +32,7 @@ object ToDoDB {
     }
 
     fun all(): List<ToDo> = database {
-        ToDoEntity.all().map { it.toToDo() }.toList()
+        ToDoEntity.all().map { it.toToDo() }
     }
 
     fun add(toDo: ToDo): ToDo = database {
