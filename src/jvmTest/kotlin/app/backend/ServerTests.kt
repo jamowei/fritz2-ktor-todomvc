@@ -5,7 +5,7 @@ import kotlin.test.assertTrue
 
 class ServerTests {
     @Test
-    fun testHello() {
+    fun testServer() {
         assertTrue(true)
     }
 }
