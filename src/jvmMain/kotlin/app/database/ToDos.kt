@@ -27,8 +27,8 @@ class ToDoEntity(id: EntityID<Long>) : LongEntity(id) {
 
 object ToDoDB {
 
-    fun single(id: Long?): ToDoEntity? = database {
-        if (id != null) ToDoEntity.findById(id) else null
+    fun find(id: Long): ToDoEntity? = database {
+       ToDoEntity.findById(id)
     }
 
     fun all(): List<ToDo> = database {
