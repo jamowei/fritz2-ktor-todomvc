@@ -5,6 +5,7 @@ plugins {
 }
 
 repositories {
+    mavenLocal()
     jcenter()
     mavenCentral()
     // FIXME: remove if fritz2 0.7 is released

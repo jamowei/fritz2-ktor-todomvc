@@ -1,9 +1,6 @@
 package app.frontend
 
-import app.model.L
-import app.model.ToDo
-import app.model.ToDoMessage
-import app.model.ToDoValidator
+import app.model.*
 import dev.fritz2.binding.*
 import dev.fritz2.dom.append
 import dev.fritz2.dom.html.HtmlElements
@@ -12,17 +9,16 @@ import dev.fritz2.dom.html.render
 import dev.fritz2.dom.key
 import dev.fritz2.dom.states
 import dev.fritz2.dom.values
-import dev.fritz2.remote.getBody
-import dev.fritz2.remote.remote
 import dev.fritz2.routing.router
+import dev.fritz2.services.rest.RestEntityService
+import dev.fritz2.services.rest.RestQueryService
+import dev.fritz2.services.rest.RestResource
 import dev.fritz2.validation.Validation
 import dev.fritz2.validation.Validator
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.UnstableDefault
-import kotlinx.serialization.builtins.list
-import kotlinx.serialization.json.Json
 import kotlin.time.ExperimentalTime
 
 data class Filter(val text: String, val function: (List<ToDo>) -> List<ToDo>)
@@ -33,66 +29,59 @@ val filters = mapOf(
     "/completed" to Filter("Completed") { toDos -> toDos.filter { it.completed } }
 )
 
+
+val toDoResource = RestResource(
+    "/api/todos",
+    ToDo::id,
+    ToDoSerializer,
+    ToDo()
+)
+
 @UnstableDefault
 @ExperimentalTime
 @ExperimentalCoroutinesApi
 @FlowPreview
 fun main() {
+
     val router = router("/")
-    val api = remote("/api/todos")
-    val serializer = ToDo.serializer()
+//    val api = remote("/api/todos")
+//    val serializer = ToDo.serializer()
+
+    val restEntity = RestEntityService<ToDo, Long>(toDoResource)
+    val restQuery = RestQueryService<ToDo, Long, Unit>(toDoResource)
 
     val toDos = object : RootStore<List<ToDo>>(emptyList(), dropInitialData = true, id = "todos"),
         Validation<ToDo, ToDoMessage, Unit> {
 
         override val validator: Validator<ToDo, ToDoMessage, Unit> = ToDoValidator
 
-        val load = handle {
-            runCatching {
-                Json.parse(serializer.list, api.get().getBody())
-            }.getOrDefault(emptyList())
-        }
+//        val load = handle<Unit> { toDos, query ->
+//            restQuery.query(toDos, query)
+//        }
 
-        val add = handle<String> { toDos, text ->
-            val newTodo = ToDo(text = text)
-            if (validate(newTodo, Unit)) {
-                runCatching {
-                    toDos + Json.parse(
-                        serializer, api.contentType("application/json")
-                            .body(Json.stringify(serializer, newTodo))
-                            .post()
-                            .getBody()
-                    )
-                }.getOrDefault(toDos)
-            } else toDos
+        val load = handle<Unit>(execute = restQuery::query)
+
+
+        val add = handleAndOffer<String, Unit> { toDos, text ->
+//            restQuery.saveAll(toDos + ToDo(text = text)) funktioniert so nicht
+            toDos + restEntity.saveOrUpdate(this, ToDo(text = text))
         }
 
         val remove = handle<Long> { toDos, id ->
-            runCatching {
-                api.delete(id.toString())
-            }
-            toDos.filterNot { it.id == id }
+            restQuery.delete(toDos, id)
         }
 
-        val toggleAll = handle<Boolean> { toDos, toggle ->
+        val toggleAll = handleAndOffer<Boolean, Unit> { toDos, toggle ->
             toDos.map {
                 val toDo = it.copy(completed = toggle)
-                runCatching {
-                    api.contentType("application/json")
-                        .body(Json.stringify(serializer, toDo))
-                        .put(toDo.id.toString())
-                }
-                toDo
+                restEntity.saveOrUpdate(this, toDo)
             }
         }
 
+        //FIXME: nicht optimal
         val clearCompleted = handle { toDos ->
-            runCatching {
-                toDos.filter { it.completed }.forEach {
-                    api.delete(it.id.toString())
-                }
-            }
-            toDos.filterNot { it.completed }
+            val ids = toDos.filter { it.completed }.map { it.id }.toTypedArray()
+            restQuery.delete(toDos, *ids)
         }
 
         val count = data.map { todos -> todos.count { !it.completed } }.distinctUntilChanged()
@@ -100,6 +89,8 @@ fun main() {
 
         init {
             action() handledBy load
+            //FIXME: syncBy mit type parameter
+//            syncBy(load)
         }
     }
 
@@ -107,11 +98,9 @@ fun main() {
         header {
             h1 { +"todos" }
 
-            toDos.validator.msgs.each(ToDoMessage::id).map {
-                render {
-                    div("alert") {
-                        +it.text
-                    }
+            toDos.validator.msgs.each(ToDoMessage::id).render {
+                div("alert") {
+                    +it.text
                 }
             }.bind()
 
@@ -142,14 +131,9 @@ fun main() {
                     }
                 }.each(ToDo::id).map { toDo ->
                     val toDoStore = toDos.sub(toDo, ToDo::id)
-
-                    toDoStore.data.drop(1) handledBy toDoStore.handle { _, changedToDo ->
-                        runCatching {
-                            api.contentType("application/json")
-                                .body(Json.stringify(serializer, changedToDo))
-                                .put(changedToDo.id.toString())
-                        }
-                        changedToDo
+                    // FIXME: nicht wirklich schön, besser syncBy
+                    toDoStore.data.drop(1) handledBy toDoStore.handleAndOffer<ToDo, Unit> { _, newToDo ->
+                        restEntity.saveOrUpdate(this, newToDo)
                     }
 
                     val textStore = toDoStore.sub(L.ToDo.text)
