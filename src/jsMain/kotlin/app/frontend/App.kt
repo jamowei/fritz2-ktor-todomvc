@@ -47,41 +47,40 @@ fun main() {
 //    val api = remote("/api/todos")
 //    val serializer = ToDo.serializer()
 
-    val restEntity = RestEntityService<ToDo, Long>(toDoResource)
-    val restQuery = RestQueryService<ToDo, Long, Unit>(toDoResource)
 
     val toDos = object : RootStore<List<ToDo>>(emptyList(), dropInitialData = true, id = "todos"),
         Validation<ToDo, ToDoMessage, Unit> {
 
+        val entity = RestEntityService<ToDo, Long>(toDoResource)
+        val query = RestQueryService<ToDo, Long, Unit>(toDoResource)
         override val validator: Validator<ToDo, ToDoMessage, Unit> = ToDoValidator
 
-//        val load = handle<Unit> { toDos, query ->
-//            restQuery.query(toDos, query)
-//        }
-
-        val load = handle<Unit>(execute = restQuery::query)
-
+        val load = handle<Unit>(execute = query::query)
 
         val add = handleAndOffer<String, Unit> { toDos, text ->
-//            restQuery.saveAll(toDos + ToDo(text = text)) funktioniert so nicht
-            toDos + restEntity.saveOrUpdate(this, ToDo(text = text))
+            toDos + entity.saveOrUpdate(ToDo(text = text))
         }
 
-        val remove = handle<Long> { toDos, id ->
-            restQuery.delete(toDos, id)
+        val remove = handle { toDos, id: Long ->
+            query.delete(toDos, id)
         }
 
-        val toggleAll = handleAndOffer<Boolean, Unit> { toDos, toggle ->
-            toDos.map {
-                val toDo = it.copy(completed = toggle)
-                restEntity.saveOrUpdate(this, toDo)
+        val toggleAll = handle { toDos, toggle: Boolean ->
+            toDos.partition { it.completed == toggle }.let { (upToDate, toUpdate) ->
+                upToDate + toUpdate.map { entity.saveOrUpdate(it.copy(completed = toggle)) }
             }
         }
 
-        //FIXME: nicht optimal
         val clearCompleted = handle { toDos ->
-            val ids = toDos.filter { it.completed }.map { it.id }.toTypedArray()
-            restQuery.delete(toDos, *ids)
+            toDos.partition(ToDo::completed).let { (completed, uncompleted) ->
+                query.delete(toDos, completed.map(ToDo::id))
+                uncompleted
+            }
+        }
+
+        val updateToDo = handle { model, toDo: ToDo ->
+            entity.saveOrUpdate(toDo)
+            model
         }
 
         val count = data.map { todos -> todos.count { !it.completed } }.distinctUntilChanged()
@@ -89,8 +88,6 @@ fun main() {
 
         init {
             action() handledBy load
-            //FIXME: syncBy mit type parameter
-//            syncBy(load)
         }
     }
 
@@ -129,59 +126,54 @@ fun main() {
                     router.routes.map { route ->
                         filters[route]?.function?.invoke(all) ?: all
                     }
-                }.each(ToDo::id).map { toDo ->
+                }.each(ToDo::id).render { toDo ->
                     val toDoStore = toDos.sub(toDo, ToDo::id)
-                    // FIXME: nicht wirklich schön, besser syncBy
-                    toDoStore.data.drop(1) handledBy toDoStore.handleAndOffer<ToDo, Unit> { _, newToDo ->
-                        restEntity.saveOrUpdate(this, newToDo)
-                    }
+                    toDoStore.syncBy(toDos.updateToDo)
 
                     val textStore = toDoStore.sub(L.ToDo.text)
                     val completedStore = toDoStore.sub(L.ToDo.completed)
                     val editingStore = toDoStore.sub(L.ToDo.editing)
 
-                    render {
-                        li {
-                            attr("data-id", toDoStore.id)
-                            //TODO: better flatmap over editing and completed
-                            classMap = toDoStore.data.map {
-                                mapOf(
-                                    "completed" to it.completed,
-                                    "editing" to it.editing
-                                )
-                            }
-                            div("view") {
-                                input("toggle") {
-                                    type = const("checkbox")
-                                    checked = completedStore.data
+                    li {
+                        attr("data-id", toDoStore.id)
+                        //TODO: better flatmap over editing and completed
+                        classMap = toDoStore.data.map {
+                            mapOf(
+                                "completed" to it.completed,
+                                "editing" to it.editing
+                            )
+                        }
+                        div("view") {
+                            input("toggle") {
+                                type = const("checkbox")
+                                checked = completedStore.data
 
-                                    changes.states() handledBy completedStore.update
-                                }
-                                label {
-                                    textStore.data.bind()
-
-                                    dblclicks.map { true } handledBy editingStore.update
-                                }
-                                button("destroy") {
-                                    clicks.events.map { toDo.id } handledBy toDos.remove
-                                }
+                                changes.states() handledBy completedStore.update
                             }
-                            input("edit") {
-                                value = textStore.data
-                                changes.values() handledBy textStore.update
+                            label {
+                                textStore.data.bind()
 
-                                editingStore.data.map { isEditing ->
-                                    if (isEditing) domNode.apply {
-                                        focus()
-                                        select()
-                                    }
-                                    isEditing.toString()
-                                }.watch()
-                                merge(
-                                    blurs.map { false },
-                                    keyups.key().filter { it.isKey(Keys.Enter) }.map { false }
-                                ) handledBy editingStore.update
+                                dblclicks.map { true } handledBy editingStore.update
                             }
+                            button("destroy") {
+                                clicks.events.map { toDo.id } handledBy toDos.remove
+                            }
+                        }
+                        input("edit") {
+                            value = textStore.data
+                            changes.values() handledBy textStore.update
+
+                            editingStore.data.map { isEditing ->
+                                if (isEditing) domNode.apply {
+                                    focus()
+                                    select()
+                                }
+                                isEditing.toString()
+                            }.watch()
+                            merge(
+                                blurs.map { false },
+                                keyups.key().filter { it.isKey(Keys.Enter) }.map { false }
+                            ) handledBy editingStore.update
                         }
                     }
                 }.bind()

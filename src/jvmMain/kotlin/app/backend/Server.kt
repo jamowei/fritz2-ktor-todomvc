@@ -80,7 +80,7 @@ fun Application.main() {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid id"))
                 } else {
                     environment.log.info("remove ToDo with id: ${oldToDo.id.value}")
-                    ToDoDB.remove(oldToDo)
+                    call.respond(HttpStatusCode.OK, ToDoDB.remove(oldToDo))
                 }
             }
         }
