@@ -58,7 +58,8 @@ fun main() {
         val load = handle<Unit>(execute = query::query)
 
         val add = handleAndOffer<String, Unit> { toDos, text ->
-            toDos + entity.saveOrUpdate(ToDo(text = text))
+            val newTodo = ToDo(text = text)
+            if(validate(newTodo, Unit)) toDos + entity.saveOrUpdate(newTodo) else toDos
         }
 
         val remove = handle { toDos, id: Long ->
@@ -79,7 +80,7 @@ fun main() {
         }
 
         val updateToDo = handle { model, toDo: ToDo ->
-            entity.saveOrUpdate(toDo)
+            if(validate(toDo, Unit)) entity.saveOrUpdate(toDo)
             model
         }
 
