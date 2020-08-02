@@ -6,7 +6,6 @@ import dev.fritz2.serialization.Serializer
 import dev.fritz2.validation.ValidationMessage
 import dev.fritz2.validation.Validator
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.UnstableDefault
 import kotlinx.serialization.builtins.list
 import kotlinx.serialization.json.Json
@@ -16,9 +15,7 @@ import kotlinx.serialization.json.Json
 data class ToDo(
     val id: Long = -1,
     val text: String = "",
-    val completed: Boolean = false,
-    @Transient
-    val editing: Boolean = false
+    val completed: Boolean = false
 )
 
 data class ToDoMessage(val id: String, val text: String) : ValidationMessage {
@@ -27,7 +24,7 @@ data class ToDoMessage(val id: String, val text: String) : ValidationMessage {
 
 object ToDoValidator : Validator<ToDo, ToDoMessage, Unit>() {
 
-    val maxTextLength = 50
+    const val maxTextLength = 50
 
     override fun validate(data: ToDo, metadata: Unit): List<ToDoMessage> {
         val msgs = mutableListOf<ToDoMessage>()

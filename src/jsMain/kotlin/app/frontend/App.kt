@@ -24,12 +24,12 @@ import kotlin.time.ExperimentalTime
 data class Filter(val text: String, val function: (List<ToDo>) -> List<ToDo>)
 
 val filters = mapOf(
-    "/" to Filter("All") { it },
-    "/active" to Filter("Active") { toDos -> toDos.filter { !it.completed } },
-    "/completed" to Filter("Completed") { toDos -> toDos.filter { it.completed } }
+    "all" to Filter("All") { it },
+    "active" to Filter("Active") { toDos -> toDos.filter { !it.completed } },
+    "completed" to Filter("Completed") { toDos -> toDos.filter { it.completed } }
 )
 
-
+@UnstableDefault
 val toDoResource = RestResource(
     "/api/todos",
     ToDo::id,
@@ -43,10 +43,7 @@ val toDoResource = RestResource(
 @FlowPreview
 fun main() {
 
-    val router = router("/")
-//    val api = remote("/api/todos")
-//    val serializer = ToDo.serializer()
-
+    val router = router("all")
 
     val toDos = object : RootStore<List<ToDo>>(emptyList(), dropInitialData = true, id = "todos"),
         Validation<ToDo, ToDoMessage, Unit> {
@@ -68,7 +65,7 @@ fun main() {
 
         val toggleAll = handle { toDos, toggle: Boolean ->
             toDos.partition { it.completed == toggle }.let { (upToDate, toUpdate) ->
-                upToDate + toUpdate.map { entity.saveOrUpdate(it.copy(completed = toggle)) }
+                upToDate + toUpdate.map { it.copy(completed = toggle) }
             }
         }
 
@@ -133,16 +130,19 @@ fun main() {
 
                     val textStore = toDoStore.sub(L.ToDo.text)
                     val completedStore = toDoStore.sub(L.ToDo.completed)
-                    val editingStore = toDoStore.sub(L.ToDo.editing)
+
+                    val editingStore = object: RootStore<Boolean>(false) {}
 
                     li {
                         attr("data-id", toDoStore.id)
                         //TODO: better flatmap over editing and completed
-                        classMap = toDoStore.data.map {
-                            mapOf(
-                                "completed" to it.completed,
-                                "editing" to it.editing
-                            )
+                        classMap = toDoStore.data.flatMapLatest { toDo ->
+                            editingStore.data.map { editing ->
+                                mapOf(
+                                    "completed" to toDo.completed,
+                                    "editing" to editing
+                                )
+                            }
                         }
                         div("view") {
                             input("toggle") {
