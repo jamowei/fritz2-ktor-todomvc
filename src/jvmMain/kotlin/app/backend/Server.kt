@@ -66,7 +66,7 @@ fun Application.main() {
                 val newToDo = call.receive<ToDo>()
                 if (oldToDo == null) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid id"))
-                } else if(!ToDoValidator.isValid(newToDo, Unit)) {
+                } else if (!ToDoValidator.isValid(newToDo, Unit)) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "data is not valid"))
                 } else {
                     environment.log.info("update ToDo[id=${oldToDo.id.value}] to: $newToDo")
@@ -76,7 +76,7 @@ fun Application.main() {
 
             delete("/todos/{id}") {
                 val oldToDo = call.parameters["id"]?.toLongOrNull()?.let { ToDoDB.find(it) }
-                if(oldToDo == null) {
+                if (oldToDo == null) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid id"))
                 } else {
                     environment.log.info("remove ToDo with id: ${oldToDo.id.value}")

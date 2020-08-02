@@ -56,7 +56,7 @@ fun main() {
 
         val add = handleAndOffer<String, Unit> { toDos, text ->
             val newTodo = ToDo(text = text)
-            if(validate(newTodo, Unit)) toDos + entity.saveOrUpdate(newTodo) else toDos
+            if (validate(newTodo, Unit)) toDos + entity.saveOrUpdate(newTodo) else toDos
         }
 
         val remove = handle { toDos, id: Long ->
@@ -77,7 +77,7 @@ fun main() {
         }
 
         val updateToDo = handle { model, toDo: ToDo ->
-            if(validate(toDo, Unit)) entity.saveOrUpdate(toDo)
+            if (validate(toDo, Unit)) entity.saveOrUpdate(toDo)
             model
         }
 
@@ -131,7 +131,7 @@ fun main() {
                     val textStore = toDoStore.sub(L.ToDo.text)
                     val completedStore = toDoStore.sub(L.ToDo.completed)
 
-                    val editingStore = object: RootStore<Boolean>(false) {}
+                    val editingStore = object : RootStore<Boolean>(false) {}
 
                     li {
                         attr("data-id", toDoStore.id)

@@ -56,7 +56,7 @@ object ToDoValidator : Validator<ToDo, ToDoMessage, Unit>() {
 }
 
 @UnstableDefault
-object ToDoSerializer: Serializer<ToDo, String> {
+object ToDoSerializer : Serializer<ToDo, String> {
     override fun read(msg: String): ToDo = Json.parse(ToDo.serializer(), msg)
 
     override fun readList(msg: String): List<ToDo> = Json.parse(ToDo.serializer().list, msg)
