@@ -9,12 +9,10 @@ import dev.fritz2.dom.html.render
 import dev.fritz2.dom.key
 import dev.fritz2.dom.states
 import dev.fritz2.dom.values
+import dev.fritz2.repositories.Resource
+import dev.fritz2.repositories.rest.restEntity
+import dev.fritz2.repositories.rest.restQuery
 import dev.fritz2.routing.router
-import dev.fritz2.services.rest.RestEntityService
-import dev.fritz2.services.rest.RestQueryService
-import dev.fritz2.services.rest.RestResource
-import dev.fritz2.validation.Validation
-import dev.fritz2.validation.Validator
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
@@ -30,12 +28,13 @@ val filters = mapOf(
 )
 
 @UnstableDefault
-val toDoResource = RestResource(
-    "/api/todos",
+val toDoResource = Resource(
     ToDo::id,
     ToDoSerializer,
     ToDo()
 )
+
+const val toDoUrl = "/api/todos"
 
 @UnstableDefault
 @ExperimentalTime
@@ -45,18 +44,18 @@ fun main() {
 
     val router = router("all")
 
-    val toDos = object : RootStore<List<ToDo>>(emptyList(), dropInitialData = true, id = "todos"),
-        Validation<ToDo, ToDoMessage, Unit> {
+    val toDos = object : RootStore<List<ToDo>>(emptyList(), dropInitialData = true, id = "todos") {
 
-        val entity = RestEntityService<ToDo, Long>(toDoResource)
-        val query = RestQueryService<ToDo, Long, Unit>(toDoResource)
-        override val validator: Validator<ToDo, ToDoMessage, Unit> = ToDoValidator
+        val entity = restEntity(toDoResource, toDoUrl)
+        val query = restQuery<ToDo, Long, Unit>(toDoResource, toDoUrl)
+        val validator = ToDoValidator
 
         val load = handle<Unit>(execute = query::query)
 
         val add = handleAndOffer<String, Unit> { toDos, text ->
             val newTodo = ToDo(text = text)
-            if (validate(newTodo, Unit)) toDos + entity.saveOrUpdate(newTodo) else toDos
+            if (validator.isValid(newTodo, Unit))
+                toDos + entity.saveOrUpdate(newTodo) else toDos
         }
 
         val remove = handle { toDos, id: Long ->
@@ -77,7 +76,7 @@ fun main() {
         }
 
         val updateToDo = handle { model, toDo: ToDo ->
-            if (validate(toDo, Unit)) entity.saveOrUpdate(toDo)
+            if (validator.isValid(toDo, Unit)) entity.saveOrUpdate(toDo)
             model
         }
 
@@ -120,10 +119,8 @@ fun main() {
                 text("Mark all as complete")
             }
             ul("todo-list") {
-                toDos.data.flatMapLatest { all ->
-                    router.routes.map { route ->
-                        filters[route]?.function?.invoke(all) ?: all
-                    }
+                toDos.data.combine(router) { all, route ->
+                    filters[route]?.function?.invoke(all) ?: all
                 }.each(ToDo::id).render { toDo ->
                     val toDoStore = toDos.sub(toDo, ToDo::id)
                     toDoStore.syncBy(toDos.updateToDo)
@@ -135,14 +132,11 @@ fun main() {
 
                     li {
                         attr("data-id", toDoStore.id)
-                        //TODO: better flatmap over editing and completed
-                        classMap = toDoStore.data.flatMapLatest { toDo ->
-                            editingStore.data.map { editing ->
-                                mapOf(
-                                    "completed" to toDo.completed,
-                                    "editing" to editing
-                                )
-                            }
+                        classMap = toDoStore.data.combine(editingStore.data) { toDo, editing ->
+                            mapOf(
+                                "completed" to toDo.completed,
+                                "editing" to editing
+                            )
                         }
                         div("view") {
                             input("toggle") {
@@ -185,7 +179,7 @@ fun main() {
     fun HtmlElements.filter(text: String, route: String) {
         li {
             a {
-                className = router.routes.map { if (it == route) "selected" else "" }
+                className = router.map { if (it == route) "selected" else "" }
                 href = const("#$route")
                 text(text)
             }

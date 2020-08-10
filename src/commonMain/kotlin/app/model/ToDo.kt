@@ -19,7 +19,7 @@ data class ToDo(
 )
 
 data class ToDoMessage(val id: String, val text: String) : ValidationMessage {
-    override fun failed(): Boolean = true
+    override fun isError(): Boolean = true
 }
 
 object ToDoValidator : Validator<ToDo, ToDoMessage, Unit>() {
