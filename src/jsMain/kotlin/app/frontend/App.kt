@@ -50,9 +50,9 @@ fun main() {
         val query = restQuery<ToDo, Long, Unit>(toDoResource, toDoUrl)
         val validator = ToDoValidator
 
-        val load = handle<Unit>(execute = query::query)
+        val load = handle(execute = query::query)
 
-        val add = handleAndOffer<String, Unit> { toDos, text ->
+        val add = handle<String> { toDos, text ->
             val newTodo = ToDo(text = text)
             if (validator.isValid(newTodo, Unit))
                 toDos + entity.saveOrUpdate(newTodo) else toDos
