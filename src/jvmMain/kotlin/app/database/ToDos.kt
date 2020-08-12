@@ -1,5 +1,6 @@
 package app.database
 
+import app.backend.validator
 import app.model.ToDo
 import app.model.ToDoValidator
 import org.jetbrains.exposed.dao.LongEntity
@@ -12,7 +13,7 @@ import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object ToDosTable : LongIdTable() {
-    val text = varchar("text", ToDoValidator.maxTextLength)
+    val text = varchar("text", validator.maxTextLength)
     val completed = bool("completed")
 }
 

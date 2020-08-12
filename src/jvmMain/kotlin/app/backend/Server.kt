@@ -23,6 +23,8 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import java.io.File
 
+val validator = ToDoValidator()
+
 fun Application.main() {
     val currentDir = File(".").absoluteFile
     environment.log.info("Current directory: $currentDir")
@@ -36,8 +38,6 @@ fun Application.main() {
     database {
         SchemaUtils.create(ToDosTable)
     }
-
-    val validator = ToDoValidator()
 
     routing {
         get("/") {

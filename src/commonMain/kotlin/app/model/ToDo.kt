@@ -24,7 +24,7 @@ data class ToDoMessage(val id: String, val text: String) : ValidationMessage {
 
 class ToDoValidator : Validator<ToDo, ToDoMessage, Unit>() {
 
-    private val maxTextLength = 50
+    val maxTextLength = 50
 
     override fun validate(data: ToDo, metadata: Unit): List<ToDoMessage> {
         val msgs = mutableListOf<ToDoMessage>()
