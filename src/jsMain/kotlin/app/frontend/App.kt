@@ -9,8 +9,9 @@ import dev.fritz2.dom.html.render
 import dev.fritz2.dom.key
 import dev.fritz2.dom.states
 import dev.fritz2.dom.values
+import dev.fritz2.lenses.Lens
+import dev.fritz2.lenses.elementLens
 import dev.fritz2.repositories.Resource
-import dev.fritz2.repositories.rest.restEntity
 import dev.fritz2.repositories.rest.restQuery
 import dev.fritz2.routing.router
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,8 +35,6 @@ val toDoResource = Resource(
     ToDo()
 )
 
-const val toDoUrl = "/api/todos"
-
 @UnstableDefault
 @ExperimentalTime
 @ExperimentalCoroutinesApi
@@ -46,16 +45,16 @@ fun main() {
 
     val toDos = object : RootStore<List<ToDo>>(emptyList(), dropInitialData = true, id = "todos") {
 
-        val entity = restEntity(toDoResource, toDoUrl)
-        val query = restQuery<ToDo, Long, Unit>(toDoResource, toDoUrl)
-        val validator = ToDoValidator
+        val query = restQuery<ToDo, Long, Unit>(toDoResource, "/api/todos")
+        val validator = ToDoValidator()
 
         val load = handle(execute = query::query)
 
         val add = handle<String> { toDos, text ->
             val newTodo = ToDo(text = text)
             if (validator.isValid(newTodo, Unit))
-                toDos + entity.saveOrUpdate(newTodo) else toDos
+                query.addOrUpdate(toDos, newTodo)
+            else toDos
         }
 
         val remove = handle { toDos, id: Long ->
@@ -63,9 +62,9 @@ fun main() {
         }
 
         val toggleAll = handle { toDos, toggle: Boolean ->
-            toDos.partition { it.completed == toggle }.let { (upToDate, toUpdate) ->
-                upToDate + toUpdate.map { it.copy(completed = toggle) }
-            }
+            query.updateMany(toDos, toDos.mapNotNull {
+                if(it.completed != toggle) it.copy(completed = toggle) else null
+            })
         }
 
         val clearCompleted = handle { toDos ->
@@ -75,9 +74,9 @@ fun main() {
             }
         }
 
-        val updateToDo = handle { model, toDo: ToDo ->
-            if (validator.isValid(toDo, Unit)) entity.saveOrUpdate(toDo)
-            model
+        val addOrUpdate = handle<ToDo> { toDos, toDo ->
+            if (validator.isValid(toDo, Unit)) query.addOrUpdate(toDos, toDo)
+            else toDos
         }
 
         val count = data.map { todos -> todos.count { !it.completed } }.distinctUntilChanged()
@@ -122,11 +121,23 @@ fun main() {
                 toDos.data.combine(router) { all, route ->
                     filters[route]?.function?.invoke(all) ?: all
                 }.each(ToDo::id).render { toDo ->
-                    val toDoStore = toDos.sub(toDo, ToDo::id)
-                    toDoStore.syncBy(toDos.updateToDo)
+                    // detach SubStore from RootStore
+                    val toDoStore = object : SubStore<List<ToDo>, List<ToDo>, ToDo>(toDos, elementLens(toDo, ToDo::id), toDos, elementLens(toDo, ToDo::id)) {
+                        val state = MutableStateFlow(toDo)
 
-                    val textStore = toDoStore.sub(L.ToDo.text)
-                    val completedStore = toDoStore.sub(L.ToDo.completed)
+                        override suspend fun enqueue(update: QueuedUpdate<ToDo>) {
+                            val t = update.update(state.value)
+                            state.value = t
+                        }
+
+                        fun <X> detach(lens: Lens<ToDo, X>): SubStore<ToDo, ToDo, X> =
+                            SubStore(this, lens, this, lens)
+                    }
+                    // link SubStore change to RootStore
+                    toDoStore.state.drop(1) handledBy toDos.addOrUpdate
+
+                    val textStore = toDoStore.detach(L.ToDo.text)
+                    val completedStore = toDoStore.detach(L.ToDo.completed)
 
                     val editingStore = object : RootStore<Boolean>(false) {}
 
@@ -188,6 +199,11 @@ fun main() {
 
     val appFooter = render {
         footer("footer") {
+            className = toDos.count.map {
+                if (it == 0) "hidden"
+                else ""
+            }
+
             span("todo-count") {
                 strong {
                     toDos.count.map {

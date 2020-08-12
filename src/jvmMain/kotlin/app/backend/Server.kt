@@ -37,6 +37,8 @@ fun Application.main() {
         SchemaUtils.create(ToDosTable)
     }
 
+    val validator = ToDoValidator()
+
     routing {
         get("/") {
             call.respondRedirect("/index.html", permanent = true)
@@ -53,7 +55,7 @@ fun Application.main() {
 
             post("/todos") {
                 val toDo = call.receive<ToDo>()
-                if (ToDoValidator.isValid(toDo, Unit)) {
+                if (validator.isValid(toDo, Unit)) {
                     environment.log.info("save new ToDo: $toDo")
                     call.respond(HttpStatusCode.Created, ToDoDB.add(toDo))
                 } else {
@@ -66,7 +68,7 @@ fun Application.main() {
                 val newToDo = call.receive<ToDo>()
                 if (oldToDo == null) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid id"))
-                } else if (!ToDoValidator.isValid(newToDo, Unit)) {
+                } else if (!validator.isValid(newToDo, Unit)) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "data is not valid"))
                 } else {
                     environment.log.info("update ToDo[id=${oldToDo.id.value}] to: $newToDo")
