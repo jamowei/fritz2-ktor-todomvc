@@ -11,16 +11,11 @@ The `jsMain` section contains the complete code of the client-application writte
 The backend part is in the `jvmMain` section where all the code for the server is.
 
 This project uses the following libraries:
-* [fritz2](https://github.com/jwstegemann/fritz2) 
- - mainly in the frontend, except validation and model in both sides
-* [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) 
- - used in frontend and backend for serializing the shared model
-* [Ktor](https://ktor.io/) 
- - running the server with
-* [Exposed](https://github.com/JetBrains/Exposed) 
- - making CRUD operations to the database
-* [H2 Database](https://www.h2database.com/html/main.html) 
- - running as in-memory-db which stores the data
+* [fritz2](https://github.com/jwstegemann/fritz2) - mainly in the frontend, except validation and model in both sides
+* [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) - used in frontend and backend for serializing the shared model
+* [Ktor](https://ktor.io/) - running the server with
+* [Exposed](https://github.com/JetBrains/Exposed) - making CRUD operations to the database
+* [H2 Database](https://www.h2database.com/html/main.html) - running as in-memory-db which stores the data
 
 # Current status
 What is currently there:
@@ -28,24 +23,17 @@ What is currently there:
 * working validation provided by fritz2 extension on client- and server-side
 * complete gradle configuration
 * some tests
+* new features from fritz2 0.7 included
 
 What will come next:
-* using new stores provided by fritz2 for dealing better with the remote API (less code)
 * more tests e.g. API-Tests...
 
 # Run
 To run this application you only need to run the following gradle task:
 ```
-> gradlew bootRun
+> ./gradlew run 
 ``` 
 Then navigate in your browser to [localhost:8080](http://localhost:8080/)
-
-# Build
-You can build a runnable fat Jar by running the `bootJar` gradle task. 
-If you instead want to deploy this application to a Java web server you
-can run the gradle `bootWar` task to get a war file.
-
-Both files are then located at the `./backend/build/libs` folder.
 
 # Contribution
 If you like this example and how fritz2 works it would be great 
