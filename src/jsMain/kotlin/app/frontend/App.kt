@@ -9,8 +9,6 @@ import dev.fritz2.dom.html.render
 import dev.fritz2.dom.key
 import dev.fritz2.dom.states
 import dev.fritz2.dom.values
-import dev.fritz2.lenses.Lens
-import dev.fritz2.lenses.elementLens
 import dev.fritz2.repositories.Resource
 import dev.fritz2.repositories.rest.restQuery
 import dev.fritz2.routing.router
