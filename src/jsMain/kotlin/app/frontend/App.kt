@@ -80,6 +80,7 @@ fun main() {
         }
 
         val count = data.map { todos -> todos.count { !it.completed } }.distinctUntilChanged()
+        val empty = data.map { it.isEmpty() }.distinctUntilChanged()
         val allChecked = data.map { todos -> todos.isNotEmpty() && todos.all { it.completed } }.distinctUntilChanged()
 
         init {
@@ -121,23 +122,11 @@ fun main() {
                 toDos.data.combine(router) { all, route ->
                     filters[route]?.function?.invoke(all) ?: all
                 }.each(ToDo::id).render { toDo ->
-                    // detach SubStore from RootStore
-                    val toDoStore = object : SubStore<List<ToDo>, List<ToDo>, ToDo>(toDos, elementLens(toDo, ToDo::id), toDos, elementLens(toDo, ToDo::id)) {
-                        val state = MutableStateFlow(toDo)
+                    val toDoStore = toDos.detach(toDo, ToDo::id)
+                    toDoStore.syncBy(toDos.addOrUpdate)
 
-                        override suspend fun enqueue(update: QueuedUpdate<ToDo>) {
-                            val t = update.update(state.value)
-                            state.value = t
-                        }
-
-                        fun <X> detach(lens: Lens<ToDo, X>): SubStore<ToDo, ToDo, X> =
-                            SubStore(this, lens, this, lens)
-                    }
-                    // link SubStore change to RootStore
-                    toDoStore.state.drop(1) handledBy toDos.addOrUpdate
-
-                    val textStore = toDoStore.detach(L.ToDo.text)
-                    val completedStore = toDoStore.detach(L.ToDo.completed)
+                    val textStore = toDoStore.sub(L.ToDo.text)
+                    val completedStore = toDoStore.sub(L.ToDo.completed)
 
                     val editingStore = object : RootStore<Boolean>(false) {}
 
@@ -199,10 +188,7 @@ fun main() {
 
     val appFooter = render {
         footer("footer") {
-            className = toDos.count.map {
-                if (it == 0) "hidden"
-                else ""
-            }
+            className = toDos.empty.map { if (it) "hidden" else "" }
 
             span("todo-count") {
                 strong {
