@@ -37,7 +37,7 @@ Then navigate in your browser to [localhost:8080](http://localhost:8080/)
 
 # Contribution
 If you like this example and how fritz2 works it would be great 
-when you give us a star at our [fritz2 github page](https://github.com/jwstegemann/fritz2).
+when you give us a &#11088; at our [fritz2 github page](https://github.com/jwstegemann/fritz2).
 
 When you find some bugs or improvements please let us know by reporting an issue 
 [here](https://github.com/jamowei/fritz2-spring-todomvc/issues).
