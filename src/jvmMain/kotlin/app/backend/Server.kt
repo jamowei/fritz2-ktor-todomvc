@@ -5,20 +5,15 @@ import app.database.ToDosTable
 import app.database.database
 import app.model.ToDo
 import app.model.ToDoValidator
-import io.ktor.application.Application
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.ContentNegotiation
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.resources
-import io.ktor.http.content.static
-import io.ktor.request.receive
-import io.ktor.response.respond
-import io.ktor.response.respondRedirect
+import io.ktor.application.*
+import io.ktor.features.*
+import io.ktor.http.*
+import io.ktor.http.content.*
+import io.ktor.request.*
+import io.ktor.response.*
 import io.ktor.routing.*
-import io.ktor.serialization.json
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
+import io.ktor.serialization.*
+import io.ktor.server.netty.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import java.io.File
@@ -89,6 +84,4 @@ fun Application.main() {
     }
 }
 
-fun main() {
-    embeddedServer(Netty, port = 8080, host = "127.0.0.1") { main() }.start(wait = true)
-}
+fun main(args: Array<String>): Unit = EngineMain.main(args)
