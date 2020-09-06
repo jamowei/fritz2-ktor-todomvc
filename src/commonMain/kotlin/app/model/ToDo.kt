@@ -6,8 +6,7 @@ import dev.fritz2.serialization.Serializer
 import dev.fritz2.validation.ValidationMessage
 import dev.fritz2.validation.Validator
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UnstableDefault
-import kotlinx.serialization.builtins.list
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
 @Lenses
@@ -55,14 +54,12 @@ class ToDoValidator : Validator<ToDo, ToDoMessage, Unit>() {
     }
 }
 
-@UnstableDefault
 object ToDoSerializer : Serializer<ToDo, String> {
-    override fun read(msg: String): ToDo = Json.parse(ToDo.serializer(), msg)
+    override fun read(msg: String): ToDo = Json.decodeFromString(ToDo.serializer(), msg)
 
-    override fun readList(msg: String): List<ToDo> = Json.parse(ToDo.serializer().list, msg)
+    override fun readList(msg: String): List<ToDo> = Json.decodeFromString(ListSerializer(ToDo.serializer()), msg)
 
-    override fun write(item: ToDo): String = Json.stringify(ToDo.serializer(), item)
+    override fun write(item: ToDo): String = Json.encodeToString(ToDo.serializer(), item)
 
-    override fun writeList(items: List<ToDo>): String = Json.stringify(ToDo.serializer().list, items)
-
+    override fun writeList(items: List<ToDo>): String = Json.encodeToString(ListSerializer(ToDo.serializer()), items)
 }

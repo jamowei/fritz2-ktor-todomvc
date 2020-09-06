@@ -15,7 +15,6 @@ import dev.fritz2.routing.router
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.UnstableDefault
 import kotlin.time.ExperimentalTime
 
 data class Filter(val text: String, val function: (List<ToDo>) -> List<ToDo>)
@@ -26,14 +25,12 @@ val filters = mapOf(
     "completed" to Filter("Completed") { toDos -> toDos.filter { it.completed } }
 )
 
-@UnstableDefault
 val toDoResource = Resource(
     ToDo::id,
     ToDoSerializer,
     ToDo()
 )
 
-@UnstableDefault
 @ExperimentalTime
 @ExperimentalCoroutinesApi
 @FlowPreview

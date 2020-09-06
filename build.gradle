@@ -1,7 +1,7 @@
 plugins {
-    id 'org.jetbrains.kotlin.multiplatform' version '1.3.72'
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.3.72'
-    id 'dev.fritz2.fritz2-gradle' version '0.7'
+    id 'org.jetbrains.kotlin.multiplatform' version '1.4.0'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.4.0'
+    id 'dev.fritz2.fritz2-gradle' version '0.7.1'
 }
 
 repositories {
@@ -9,10 +9,10 @@ repositories {
     mavenCentral()
 }
 
-def ktor_version = '1.3.2'
+def ktor_version = '1.4.0'
 def logback_version = '1.2.3'
-def serialization_version = '0.20.0'
-def exposed_version = '0.22.1'
+def serialization_version = '1.0.0-RC'
+def exposed_version = '0.25.1'
 def h2_version = '1.4.200'
 
 kotlin {
@@ -30,7 +30,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
-                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$serialization_version"
             }
         }
         commonTest {
@@ -45,8 +45,6 @@ kotlin {
                 implementation "io.ktor:ktor-server-netty:$ktor_version"
                 implementation "io.ktor:ktor-serialization:$ktor_version"
                 implementation "ch.qos.logback:logback-classic:$logback_version"
-
-                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
 
                 implementation "org.jetbrains.exposed:exposed-core:$exposed_version"
                 implementation "org.jetbrains.exposed:exposed-dao:$exposed_version"
@@ -63,7 +61,6 @@ kotlin {
         jsMain {
             dependencies {
                 implementation kotlin('stdlib-js')
-                implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$serialization_version"
             }
         }
         jsTest {
