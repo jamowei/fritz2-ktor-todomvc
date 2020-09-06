@@ -17,16 +17,11 @@ This project uses the following libraries:
 * [Exposed](https://github.com/JetBrains/Exposed) - making CRUD operations to the database
 * [H2 Database](https://www.h2database.com/html/main.html) - running as in-memory-db which stores the data
 
-# Current status
-What is currently there:
+# Features
 * running full-stack-example based on the [TodoMVC](http://todomvc.com/)
 * working validation provided by fritz2 extension on client- and server-side
 * complete gradle configuration
 * some tests
-* new features from fritz2 0.7 included
-
-What will come next:
-* more tests e.g. API-Tests...
 
 # Run
 To run this application you only need to run the following gradle task:
