@@ -1,7 +1,10 @@
 package app.frontend
 
 import app.model.*
-import dev.fritz2.binding.*
+import dev.fritz2.binding.RootStore
+import dev.fritz2.binding.detach
+import dev.fritz2.binding.invoke
+import dev.fritz2.binding.watch
 import dev.fritz2.dom.append
 import dev.fritz2.dom.html.Keys
 import dev.fritz2.dom.html.RenderContext
@@ -13,9 +16,7 @@ import dev.fritz2.repositories.Resource
 import dev.fritz2.repositories.rest.restQuery
 import dev.fritz2.routing.router
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
-import kotlin.time.ExperimentalTime
 
 data class Filter(val text: String, val function: (List<ToDo>) -> List<ToDo>)
 
@@ -31,9 +32,7 @@ val toDoResource = Resource(
     ToDo()
 )
 
-@ExperimentalTime
 @ExperimentalCoroutinesApi
-@FlowPreview
 fun main() {
 
     val router = router("all")
