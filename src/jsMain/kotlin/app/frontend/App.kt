@@ -3,8 +3,8 @@ package app.frontend
 import app.model.*
 import dev.fritz2.binding.*
 import dev.fritz2.dom.append
-import dev.fritz2.dom.html.HtmlElements
 import dev.fritz2.dom.html.Keys
+import dev.fritz2.dom.html.RenderContext
 import dev.fritz2.dom.html.render
 import dev.fritz2.dom.key
 import dev.fritz2.dom.states
@@ -38,7 +38,7 @@ fun main() {
 
     val router = router("all")
 
-    val toDos = object : RootStore<List<ToDo>>(emptyList(), dropInitialData = true, id = "todos") {
+    val toDos = object : RootStore<List<ToDo>>(emptyList(), id = "todos") {
 
         val query = restQuery<ToDo, Long, Unit>(toDoResource, "/api/todos")
         val validator = ToDoValidator()
@@ -79,7 +79,7 @@ fun main() {
         val allChecked = data.map { todos -> todos.isNotEmpty() && todos.all { it.completed } }.distinctUntilChanged()
 
         init {
-            action() handledBy load
+            load()
         }
     }
 
@@ -87,15 +87,15 @@ fun main() {
         header {
             h1 { +"todos" }
 
-            toDos.validator.msgs.each(ToDoMessage::id).render {
+            toDos.validator.msgs.renderEach(ToDoMessage::id) {
                 div("alert") {
                     +it.text
                 }
-            }.bind()
+            }
 
             input("new-todo") {
-                placeholder = const("What needs to be done?")
-                autofocus = const(true)
+                placeholder("What needs to be done?")
+                autofocus(true)
 
                 changes.values().onEach { domNode.value = "" } handledBy toDos.add
             }
@@ -105,18 +105,19 @@ fun main() {
     val mainSection = render {
         section("main") {
             input("toggle-all", id = "toggle-all") {
-                type = const("checkbox")
-                checked = toDos.allChecked
+                type("checkbox")
+                checked(toDos.allChecked)
 
                 changes.states() handledBy toDos.toggleAll
             }
-            label(`for` = "toggle-all") {
-                text("Mark all as complete")
+            label {
+                `for`("toggle-all")
+                +"Mark all as complete"
             }
             ul("todo-list") {
                 toDos.data.combine(router) { all, route ->
                     filters[route]?.function?.invoke(all) ?: all
-                }.each(ToDo::id).render { toDo ->
+                }.renderEach(ToDo::id) { toDo ->
                     val toDoStore = toDos.detach(toDo, ToDo::id)
                     toDoStore.syncBy(toDos.addOrUpdate)
 
@@ -127,21 +128,21 @@ fun main() {
 
                     li {
                         attr("data-id", toDoStore.id)
-                        classMap = toDoStore.data.combine(editingStore.data) { toDo, editing ->
+                        classMap(toDoStore.data.combine(editingStore.data) { toDo, editing ->
                             mapOf(
                                 "completed" to toDo.completed,
                                 "editing" to editing
                             )
-                        }
+                        })
                         div("view") {
                             input("toggle") {
-                                type = const("checkbox")
-                                checked = completedStore.data
+                                type("checkbox")
+                                checked(completedStore.data)
 
                                 changes.states() handledBy completedStore.update
                             }
                             label {
-                                textStore.data.bind()
+                                textStore.data.asText()
 
                                 dblclicks.map { true } handledBy editingStore.update
                             }
@@ -150,7 +151,7 @@ fun main() {
                             }
                         }
                         input("edit") {
-                            value = textStore.data
+                            value(textStore.data)
                             changes.values() handledBy textStore.update
 
                             editingStore.data.map { isEditing ->
@@ -166,30 +167,30 @@ fun main() {
                             ) handledBy editingStore.update
                         }
                     }
-                }.bind()
+                }
             }
         }
     }
 
-    fun HtmlElements.filter(text: String, route: String) {
+    fun RenderContext.filter(text: String, route: String) {
         li {
             a {
-                className = router.map { if (it == route) "selected" else "" }
-                href = const("#$route")
-                text(text)
+                className(router.map { if (it == route) "selected" else "" })
+                href("#$route")
+                +text
             }
         }
     }
 
     val appFooter = render {
         footer("footer") {
-            className = toDos.empty.map { if (it) "hidden" else "" }
+            className(toDos.empty.map { if (it) "hidden" else "" })
 
             span("todo-count") {
                 strong {
                     toDos.count.map {
                         "$it item${if (it != 1) "s" else ""} left"
-                    }.bind()
+                    }.asText()
                 }
             }
 
@@ -197,7 +198,7 @@ fun main() {
                 filters.forEach { filter(it.value.text, it.key) }
             }
             button("clear-completed") {
-                text("Clear completed")
+                +"Clear completed"
 
                 clicks handledBy toDos.clearCompleted
             }
