@@ -74,10 +74,13 @@ object ToDoListStore : RootStore<List<ToDo>>(emptyList(), id = "todos") {
 class ToDoStore(toDo: ToDo): RootStore<ToDo>(toDo) {
     private val entity = restEntity(toDoResource, endpoint)
 
-    val validateAndUpdate = handle { toDo, newText: String ->
-        val newTodo = toDo.copy(text = newText)
-        if (validator.isValid(newTodo, Unit)) entity.addOrUpdate(newTodo)
-        else toDo
+    private val save = handle { old, new: ToDo ->
+        if (validator.isValid(new, Unit)) entity.addOrUpdate(new)
+        old
+    }
+
+    init {
+        syncBy(save)
     }
 }
 
@@ -184,7 +187,7 @@ fun main() {
                         }
                         input("edit") {
                             value(textStore.data)
-                            changes.values() handledBy toDoStore.validateAndUpdate
+                            changes.values() handledBy textStore.update
 
                             editingStore.data.map { isEditing ->
                                 if (isEditing) domNode.apply {
