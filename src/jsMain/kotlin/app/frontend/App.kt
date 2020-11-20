@@ -30,13 +30,13 @@ val toDoResource = Resource(
     ToDo()
 )
 
-val router = router("all")
-val query = restQuery<ToDo, Long, Unit>(toDoResource, "/api/todos")
-val entity = restEntity(toDoResource, "/api/todos")
+const val endpoint = "/api/todos"
 val validator = ToDoValidator()
+val router = router("all")
 
 object ToDoListStore : RootStore<List<ToDo>>(emptyList(), id = "todos") {
-    val load = handle(execute = query::query)
+
+    private val query = restQuery<ToDo, Long, Unit>(toDoResource, endpoint)
 
     val add = handle<String> { toDos, text ->
         val newTodo = ToDo(text = text)
@@ -62,25 +62,32 @@ object ToDoListStore : RootStore<List<ToDo>>(emptyList(), id = "todos") {
         }
     }
 
-//    val addOrUpdate = handle<ToDo> { toDos, toDo ->
-//        if (validator.isValid(toDo, Unit)) query.addOrUpdate(toDos, toDo)
-//        else toDos
-//    }
-
     val count = data.map { todos -> todos.count { !it.completed } }.distinctUntilChanged()
     val empty = data.map { it.isEmpty() }.distinctUntilChanged()
     val allChecked = data.map { todos -> todos.isNotEmpty() && todos.all { it.completed } }.distinctUntilChanged()
 
     init {
-        load()
+        handle(execute = query::query)()
     }
 }
 
 class ToDoStore(toDo: ToDo): RootStore<ToDo>(toDo) {
+    private val entity = restEntity(toDoResource, endpoint)
+
     val validateAndUpdate = handle { toDo, newText: String ->
         val newTodo = toDo.copy(text = newText)
         if (validator.isValid(newTodo, Unit)) entity.addOrUpdate(newTodo)
         else toDo
+    }
+}
+
+fun RenderContext.filter(text: String, route: String) {
+    li {
+        a {
+            className(router.map { if (it == route) "selected" else "" })
+            href("#$route")
+            +text
+        }
     }
 }
 
@@ -106,6 +113,29 @@ fun main() {
         }
     }
 
+    val appFooter = render {
+        footer("footer") {
+            className(ToDoListStore.empty.map { if (it) "hidden" else "" })
+
+            span("todo-count") {
+                strong {
+                    ToDoListStore.count.map {
+                        "$it item${if (it != 1) "s" else ""} left"
+                    }.asText()
+                }
+            }
+
+            ul("filters") {
+                filters.forEach { filter(it.value.text, it.key) }
+            }
+            button("clear-completed") {
+                +"Clear completed"
+
+                clicks handledBy ToDoListStore.clearCompleted
+            }
+        }
+    }
+
     val mainSection = render {
         section("main") {
             input("toggle-all", id = "toggle-all") {
@@ -122,12 +152,7 @@ fun main() {
                 ToDoListStore.data.combine(router) { all, route ->
                     filters[route]?.function?.invoke(all) ?: all
                 }.renderEach(ToDo::id) { toDo ->
-//                    val toDoStore = toDos.sub(toDo, ToDo::id)
-//                    val toDoStore = toDos.detach(toDo, ToDo::id)
                     val toDoStore = ToDoStore(toDo)
-
-//                    toDoStore.syncBy(ToDoListStore.addOrUpdate)
-
                     val textStore = toDoStore.sub(L.ToDo.text)
                     val completedStore = toDoStore.sub(L.ToDo.completed)
 
@@ -175,39 +200,6 @@ fun main() {
                         }
                     }
                 }
-            }
-        }
-    }
-
-    fun RenderContext.filter(text: String, route: String) {
-        li {
-            a {
-                className(router.map { if (it == route) "selected" else "" })
-                href("#$route")
-                +text
-            }
-        }
-    }
-
-    val appFooter = render {
-        footer("footer") {
-            className(ToDoListStore.empty.map { if (it) "hidden" else "" })
-
-            span("todo-count") {
-                strong {
-                    ToDoListStore.count.map {
-                        "$it item${if (it != 1) "s" else ""} left"
-                    }.asText()
-                }
-            }
-
-            ul("filters") {
-                filters.forEach { filter(it.value.text, it.key) }
-            }
-            button("clear-completed") {
-                +"Clear completed"
-
-                clicks handledBy ToDoListStore.clearCompleted
             }
         }
     }
