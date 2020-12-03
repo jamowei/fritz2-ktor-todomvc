@@ -87,7 +87,7 @@ class ToDoStore(toDo: ToDo): RootStore<ToDo>(toDo) {
 fun RenderContext.filter(text: String, route: String) {
     li {
         a {
-            className(router.map { if (it == route) "selected" else "" })
+            className(router.data.map { if (it == route) "selected" else "" })
             href("#$route")
             +text
         }
@@ -152,7 +152,7 @@ fun main() {
                 +"Mark all as complete"
             }
             ul("todo-list") {
-                ToDoListStore.data.combine(router) { all, route ->
+                ToDoListStore.data.combine(router.data) { all, route ->
                     filters[route]?.function?.invoke(all) ?: all
                 }.renderEach(ToDo::id) { toDo ->
                     val toDoStore = ToDoStore(toDo)
