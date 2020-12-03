@@ -1,16 +1,15 @@
 plugins {
     id 'org.jetbrains.kotlin.multiplatform' version '1.4.10'
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.4.10'
-    id 'dev.fritz2.fritz2-gradle' version '0.7.1'
+    id 'dev.fritz2.fritz2-gradle' version '0.8'
 }
 
 repositories {
     jcenter()
-    mavenCentral()
-    //FIXME: remove before release
     maven {
-        url 'https://oss.jfrog.org/artifactory/jfrog-dependencies'
+        url = 'https://dl.bintray.com/jwstegemann/fritz2'
     }
+    mavenCentral()
 }
 
 def ktor_version = '1.4.2'
@@ -36,7 +35,7 @@ kotlin {
                 implementation kotlin('stdlib-common')
                 implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version"
                 //FIXME: remove before release
-                implementation "dev.fritz2:core:0.8-SNAPSHOT"
+                implementation "dev.fritz2:core:0.8"
             }
         }
         commonTest {
