@@ -34,8 +34,6 @@ kotlin {
             dependencies {
                 implementation kotlin('stdlib-common')
                 implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version"
-                //FIXME: remove before release
-                implementation "dev.fritz2:core:0.8"
             }
         }
         commonTest {
