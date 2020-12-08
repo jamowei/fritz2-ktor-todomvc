@@ -5,7 +5,7 @@
 This project is an example for using [fritz2](https://www.fritz2.dev/) with in a ktor web-application.
 It will demonstrate how-to interact with a backend application in fritz2 and how-to setup this kind of project.
 
-This project is a kotlin multiplatform project which contains everything.
+This project is a Kotlin [multiplatform](https://kotlinlang.org/docs/reference/multiplatform.html) project which contains everything.
 In the `commonMain` section is the shared model and validation of the application.
 The `jsMain` section contains the complete code of the client-application written with fritz2. 
 The backend part is in the `jvmMain` section where all the code for the server is.
