@@ -111,30 +111,7 @@ fun main() {
                 placeholder("What needs to be done?")
                 autofocus(true)
 
-                changes.values().onEach { domNode.value = "" } handledBy ToDoListStore.add
-            }
-        }
-    }
-
-    val appFooter = render {
-        footer("footer") {
-            className(ToDoListStore.empty.map { if (it) "hidden" else "" })
-
-            span("todo-count") {
-                strong {
-                    ToDoListStore.count.map {
-                        "$it item${if (it != 1) "s" else ""} left"
-                    }.asText()
-                }
-            }
-
-            ul("filters") {
-                filters.forEach { filter(it.value.text, it.key) }
-            }
-            button("clear-completed") {
-                +"Clear completed"
-
-                clicks handledBy ToDoListStore.clearCompleted
+                changes.values().onEach { domNode.value = ""; it.trim() } handledBy ToDoListStore.add
             }
         }
     }
@@ -159,14 +136,14 @@ fun main() {
                     val textStore = toDoStore.sub(L.ToDo.text)
                     val completedStore = toDoStore.sub(L.ToDo.completed)
 
-                    val editingStore = object : RootStore<Boolean>(false) {}
+                    val editingStore = storeOf(false)
 
                     li {
                         attr("data-id", toDoStore.id)
-                        classMap(toDoStore.data.combine(editingStore.data) { toDo, editing ->
+                        classMap(toDoStore.data.combine(editingStore.data) { toDo, isEditing ->
                             mapOf(
                                 "completed" to toDo.completed,
-                                "editing" to editing
+                                "editing" to isEditing
                             )
                         })
                         div("view") {
@@ -203,6 +180,29 @@ fun main() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    val appFooter = render {
+        footer("footer") {
+            className(ToDoListStore.empty.map { if (it) "hidden" else "" })
+
+            span("todo-count") {
+                strong {
+                    ToDoListStore.count.map {
+                        "$it item${if (it != 1) "s" else ""} left"
+                    }.asText()
+                }
+            }
+
+            ul("filters") {
+                filters.forEach { filter(it.value.text, it.key) }
+            }
+            button("clear-completed") {
+                +"Clear completed"
+
+                clicks handledBy ToDoListStore.clearCompleted
             }
         }
     }

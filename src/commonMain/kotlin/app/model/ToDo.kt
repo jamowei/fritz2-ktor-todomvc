@@ -31,12 +31,6 @@ class ToDoValidator : Validator<ToDo, ToDoMessage, Unit>() {
 
         val textInspector = inspector.sub(L.ToDo.text)
 
-        if (textInspector.data.startsWith(" ")) msgs.add(
-            ToDoMessage(
-                textInspector.id,
-                "Text should not start with space."
-            )
-        )
         if (textInspector.data.trim().length < 3) msgs.add(
             ToDoMessage(
                 textInspector.id,
@@ -46,7 +40,7 @@ class ToDoValidator : Validator<ToDo, ToDoMessage, Unit>() {
         if (textInspector.data.length > maxTextLength) msgs.add(
             ToDoMessage(
                 textInspector.id,
-                "Text length is to long."
+                "Text length is to long (max $maxTextLength chars)."
             )
         )
 
