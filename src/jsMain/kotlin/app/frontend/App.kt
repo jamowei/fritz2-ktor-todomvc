@@ -10,7 +10,6 @@ import dev.fritz2.dom.key
 import dev.fritz2.dom.states
 import dev.fritz2.dom.values
 import dev.fritz2.repositories.Resource
-import dev.fritz2.repositories.rest.restEntity
 import dev.fritz2.repositories.rest.restQuery
 import dev.fritz2.routing.router
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,10 +37,8 @@ object ToDoListStore : RootStore<List<ToDo>>(emptyList(), id = "todos") {
 
     private val query = restQuery<ToDo, Long, Unit>(toDoResource, endpoint)
 
-    val add = handle<String> { toDos, text ->
-        val newTodo = ToDo(text = text)
-        if (validator.isValid(newTodo, Unit))
-            query.addOrUpdate(toDos, newTodo)
+    val save = handle<ToDo> { toDos, new ->
+        if (validator.isValid(new, Unit)) query.addOrUpdate(toDos, new)
         else toDos
     }
 
@@ -68,19 +65,6 @@ object ToDoListStore : RootStore<List<ToDo>>(emptyList(), id = "todos") {
 
     init {
         handle(execute = query::query)()
-    }
-}
-
-class ToDoStore(toDo: ToDo): RootStore<ToDo>(toDo) {
-    private val entity = restEntity(toDoResource, endpoint)
-
-    private val save = handle { old, new: ToDo ->
-        if (validator.isValid(new, Unit)) entity.addOrUpdate(new)
-        old
-    }
-
-    init {
-        syncBy(save)
     }
 }
 
@@ -111,7 +95,7 @@ fun main() {
                 placeholder("What needs to be done?")
                 autofocus(true)
 
-                changes.values().onEach { domNode.value = ""; it.trim() } handledBy ToDoListStore.add
+                changes.values().map { domNode.value = ""; ToDo(text = it.trim()) } handledBy ToDoListStore.save
             }
         }
     }
@@ -132,7 +116,8 @@ fun main() {
                 ToDoListStore.data.combine(router.data) { all, route ->
                     filters[route]?.function?.invoke(all) ?: all
                 }.renderEach(ToDo::id) { toDo ->
-                    val toDoStore = ToDoStore(toDo)
+                    val toDoStore = storeOf(toDo)
+                    toDoStore.syncBy(ToDoListStore.save)
                     val textStore = toDoStore.sub(L.ToDo.text)
                     val completedStore = toDoStore.sub(L.ToDo.completed)
 
