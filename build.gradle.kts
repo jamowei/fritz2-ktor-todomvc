@@ -1,9 +1,9 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 
 plugins {
-    kotlin("multiplatform") version "1.4.10"
-    kotlin("plugin.serialization") version "1.4.10"
     id("dev.fritz2.fritz2-gradle") version "0.8"
+    kotlin("plugin.serialization") version "1.4.10"
     // building fatJar
     id("com.github.johnrengelman.shadow") version "6.1.0"
     // running application with gradle
@@ -105,7 +105,7 @@ tasks.getByName<Jar>("jvmJar") {
 }
 
 // adding compiled JS file to fatJar
-tasks.getByName<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+tasks.getByName<ShadowJar>("shadowJar") {
     dependsOn(tasks.getByName("jsBrowserProductionWebpack"))
     val jsBrowserProductionWebpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack")
     from(File(jsBrowserProductionWebpack.destinationDirectory, jsBrowserProductionWebpack.outputFileName))
