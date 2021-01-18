@@ -13,6 +13,7 @@ import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
+import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -88,4 +89,9 @@ fun Application.main() {
     }
 }
 
-fun main(args: Array<String>): Unit = EngineMain.main(args)
+fun main() {
+    val port = System.getenv("PORT")?.toInt() ?: 8080
+    embeddedServer(Netty, port = port) {
+        main()
+    }.start(wait = true)
+}

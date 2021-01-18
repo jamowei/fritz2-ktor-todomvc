@@ -1,13 +1,10 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
-
 plugins {
+    application
     id("dev.fritz2.fritz2-gradle") version "0.8"
     kotlin("plugin.serialization") version "1.4.10"
+    kotlin("multiplatform") version "1.4.10"
     // building fatJar
-    id("com.github.johnrengelman.shadow") version "6.1.0"
-    // running application with gradle
-    application
+//    id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
 group = "dev.fritz2"
@@ -22,7 +19,12 @@ repositories {
     maven { url = uri("https://dl.bintray.com/kotlin/ktor") }
 }
 
+application {
+    mainClassName = "app.backend.ServerKt"
+}
+
 kotlin {
+    js().browser()
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
@@ -30,16 +32,9 @@ kotlin {
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
-        withJava()
-    }
-
-    js(LEGACY) {
-        browser {
-            binaries.executable()
-            testTask {
-                useKarma {
-                    useChromeHeadless()
-                }
+        compilations.all {
+            tasks.getByName(processResourcesTaskName) {
+                dependsOn("jsBrowserWebpack")
             }
         }
     }
@@ -89,29 +84,23 @@ kotlin {
     }
 }
 
-application {
-    mainClassName = "app.backend.ServerKt"
-}
-
-// if you want to append a version to compiled js file
-//tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
-//    outputFileName = "${project.name}-${project.version}.js"
+// adding compiled JS file to fatJar
+//tasks.getByName<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+//    dependsOn(tasks.getByName("jvmJar"))
+//    val jsBrowserProductionWebpack = tasks.getByName<org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack>("jsBrowserProductionWebpack")
+//    from(File(jsBrowserProductionWebpack.destinationDirectory, jsBrowserProductionWebpack.outputFileName))
 //}
 
-tasks.getByName<Jar>("jvmJar") {
-    dependsOn(tasks.getByName("jsBrowserProductionWebpack"))
-    val jsBrowserProductionWebpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack")
-    from(File(jsBrowserProductionWebpack.destinationDirectory, jsBrowserProductionWebpack.outputFileName))
-}
+tasks {
+    getByName<ProcessResources>("jvmProcessResources") {
+        dependsOn(getByName("jsBrowserProductionWebpack"))
+        val jsBrowserProductionWebpack = getByName<org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack>("jsBrowserProductionWebpack")
+        from(File(jsBrowserProductionWebpack.destinationDirectory, jsBrowserProductionWebpack.outputFileName))
+    }
 
-// adding compiled JS file to fatJar
-tasks.getByName<ShadowJar>("shadowJar") {
-    dependsOn(tasks.getByName("jsBrowserProductionWebpack"))
-    val jsBrowserProductionWebpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack")
-    from(File(jsBrowserProductionWebpack.destinationDirectory, jsBrowserProductionWebpack.outputFileName))
-}
-
-tasks.getByName<JavaExec>("run") {
-    dependsOn(tasks.getByName<Jar>("jvmJar"))
-    classpath(tasks.getByName<Jar>("jvmJar"))
+    getByName<JavaExec>("run") {
+        dependsOn(getByName<Jar>("jvmJar"))
+        classpath(getByName<Jar>("jvmJar"))
+        classpath(configurations.jvmRuntimeClasspath)
+    }
 }

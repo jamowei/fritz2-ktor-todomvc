@@ -30,17 +30,6 @@ To run this application you only need to run the following gradle task:
 ``` 
 Then navigate in your browser to [localhost:8080](http://localhost:8080/)
 
-# Fat Jar
-To build a runnable fat jar with all needed dependencies included you only have to run:
-```
-> ./gradlew shadowJar 
-``` 
-The bundled fat jar is located under `build/libs/fritz2-ktor-chat-1.0-all.jar`.
-You can easily run it by calling:
-```
-> java -jar fritz2-ktor-chat-1.0-all.jar
-```
-
 # Contribution
 If you like this example and how fritz2 works it would be great 
 when you give us a &#11088; at our [fritz2 github page](https://github.com/jwstegemann/fritz2).
