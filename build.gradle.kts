@@ -2,7 +2,6 @@ plugins {
     application
     id("dev.fritz2.fritz2-gradle") version "0.8"
     kotlin("plugin.serialization") version "1.4.10"
-    kotlin("multiplatform") version "1.4.10"
 }
 
 group = "dev.fritz2"
