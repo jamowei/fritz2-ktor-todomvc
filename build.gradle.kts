@@ -3,8 +3,6 @@ plugins {
     id("dev.fritz2.fritz2-gradle") version "0.8"
     kotlin("plugin.serialization") version "1.4.10"
     kotlin("multiplatform") version "1.4.10"
-    // building fatJar
-//    id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
 group = "dev.fritz2"
@@ -24,18 +22,27 @@ application {
 }
 
 kotlin {
-    js().browser()
+
+    js(LEGACY) {
+        browser {
+            runTask {
+                devServer = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.DevServer(
+                    port = 9000,
+                    contentBase = listOf("$buildDir/distributions"),
+                    proxy = mapOf(
+                        "/api/todos" to "http://localhost:8080"
+                    )
+                )
+            }
+        }
+    }
+
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
         }
         testRuns["test"].executionTask.configure {
             useJUnit()
-        }
-        compilations.all {
-            tasks.getByName(processResourcesTaskName) {
-                dependsOn("jsBrowserWebpack")
-            }
         }
     }
 
@@ -83,13 +90,6 @@ kotlin {
         }
     }
 }
-
-// adding compiled JS file to fatJar
-//tasks.getByName<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
-//    dependsOn(tasks.getByName("jvmJar"))
-//    val jsBrowserProductionWebpack = tasks.getByName<org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack>("jsBrowserProductionWebpack")
-//    from(File(jsBrowserProductionWebpack.destinationDirectory, jsBrowserProductionWebpack.outputFileName))
-//}
 
 tasks {
     getByName<ProcessResources>("jvmProcessResources") {
