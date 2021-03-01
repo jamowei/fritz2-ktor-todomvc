@@ -1,8 +1,9 @@
 package app.model
 
 import dev.fritz2.identification.inspect
+import dev.fritz2.lenses.IdProvider
 import dev.fritz2.lenses.Lenses
-import dev.fritz2.serialization.Serializer
+import dev.fritz2.resource.Resource
 import dev.fritz2.validation.ValidationMessage
 import dev.fritz2.validation.Validator
 import kotlinx.serialization.Serializable
@@ -48,12 +49,10 @@ class ToDoValidator : Validator<ToDo, ToDoMessage, Unit>() {
     }
 }
 
-object ToDoSerializer : Serializer<ToDo, String> {
-    override fun read(msg: String): ToDo = Json.decodeFromString(ToDo.serializer(), msg)
-
-    override fun readList(msg: String): List<ToDo> = Json.decodeFromString(ListSerializer(ToDo.serializer()), msg)
-
-    override fun write(item: ToDo): String = Json.encodeToString(ToDo.serializer(), item)
-
-    override fun writeList(items: List<ToDo>): String = Json.encodeToString(ListSerializer(ToDo.serializer()), items)
+object ToDoResource : Resource<ToDo, Long> {
+    override val idProvider: IdProvider<ToDo, Long> = ToDo::id
+    override fun deserialize(source: String): ToDo = Json.decodeFromString(ToDo.serializer(), source)
+    override fun deserializeList(source: String): List<ToDo> = Json.decodeFromString(ListSerializer(ToDo.serializer()), source)
+    override fun serialize(item: ToDo): String = Json.encodeToString(ToDo.serializer(), item)
+    override fun serializeList(items: List<ToDo>): String = Json.encodeToString(ListSerializer(ToDo.serializer()), items)
 }

@@ -2,14 +2,12 @@ package app.frontend
 
 import app.model.*
 import dev.fritz2.binding.*
-import dev.fritz2.dom.append
 import dev.fritz2.dom.html.Keys
 import dev.fritz2.dom.html.RenderContext
 import dev.fritz2.dom.html.render
 import dev.fritz2.dom.key
 import dev.fritz2.dom.states
 import dev.fritz2.dom.values
-import dev.fritz2.repositories.Resource
 import dev.fritz2.repositories.rest.restQuery
 import dev.fritz2.routing.router
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,11 +21,11 @@ val filters = mapOf(
     "completed" to Filter("Completed") { toDos -> toDos.filter { it.completed } }
 )
 
-val toDoResource = Resource(
-    ToDo::id,
-    ToDoSerializer,
-    ToDo()
-)
+//val toDoResource = Resource(
+//    ToDo::id,
+//    ToDoResource,
+//    ToDo()
+//)
 
 const val endpoint = "/api/todos"
 val validator = ToDoValidator()
@@ -35,26 +33,28 @@ val router = router("all")
 
 object ToDoListStore : RootStore<List<ToDo>>(emptyList(), id = "todos") {
 
-    private val query = restQuery<ToDo, Long, Unit>(toDoResource, endpoint)
+    private val restRepo = restQuery<ToDo, Long, Unit>(ToDoResource, endpoint, -1)
+
+    private val query = handle { restRepo.query(Unit) }
 
     val save = handle<ToDo> { toDos, new ->
-        if (validator.isValid(new, Unit)) query.addOrUpdate(toDos, new)
+        if (validator.isValid(new, Unit)) restRepo.addOrUpdate(toDos, new)
         else toDos
     }
 
     val remove = handle { toDos, id: Long ->
-        query.delete(toDos, id)
+        restRepo.delete(toDos, id)
     }
 
     val toggleAll = handle { toDos, toggle: Boolean ->
-        query.updateMany(toDos, toDos.mapNotNull {
+        restRepo.updateMany(toDos, toDos.mapNotNull {
             if(it.completed != toggle) it.copy(completed = toggle) else null
         })
     }
 
     val clearCompleted = handle { toDos ->
         toDos.partition(ToDo::completed).let { (completed, uncompleted) ->
-            query.delete(toDos, completed.map(ToDo::id))
+            restRepo.delete(toDos, completed.map(ToDo::id))
             uncompleted
         }
     }
@@ -64,7 +64,7 @@ object ToDoListStore : RootStore<List<ToDo>>(emptyList(), id = "todos") {
     val allChecked = data.map { todos -> todos.isNotEmpty() && todos.all { it.completed } }.distinctUntilChanged()
 
     init {
-        handle(execute = query::query)()
+        query()
     }
 }
 
@@ -78,119 +78,123 @@ fun RenderContext.filter(text: String, route: String) {
     }
 }
 
-@ExperimentalCoroutinesApi
-fun main() {
+fun RenderContext.inputHeader() {
+    header {
+        h1 { +"todos" }
 
-    val inputHeader = render {
-        header {
-            h1 { +"todos" }
-
-            validator.msgs.renderEach(ToDoMessage::id) {
-                div("alert") {
-                    +it.text
-                }
-            }
-
-            input("new-todo") {
-                placeholder("What needs to be done?")
-                autofocus(true)
-
-                changes.values().map { domNode.value = ""; ToDo(text = it.trim()) } handledBy ToDoListStore.save
+        validator.data.renderEach(ToDoMessage::id) {
+            div("alert") {
+                +it.text
             }
         }
+
+        input("new-todo") {
+            placeholder("What needs to be done?")
+            autofocus(true)
+
+            changes.values().map { domNode.value = ""; ToDo(text = it.trim()) } handledBy ToDoListStore.save
+        }
     }
+}
 
-    val mainSection = render {
-        section("main") {
-            input("toggle-all", id = "toggle-all") {
-                type("checkbox")
-                checked(ToDoListStore.allChecked)
+@ExperimentalCoroutinesApi
+fun RenderContext.mainSection() {
+    section("main") {
+        input("toggle-all", id = "toggle-all") {
+            type("checkbox")
+            checked(ToDoListStore.allChecked)
 
-                changes.states() handledBy ToDoListStore.toggleAll
-            }
-            label {
-                `for`("toggle-all")
-                +"Mark all as complete"
-            }
-            ul("todo-list") {
-                ToDoListStore.data.combine(router.data) { all, route ->
-                    filters[route]?.function?.invoke(all) ?: all
-                }.renderEach(ToDo::id) { toDo ->
-                    val toDoStore = storeOf(toDo)
-                    toDoStore.syncBy(ToDoListStore.save)
-                    val textStore = toDoStore.sub(L.ToDo.text)
-                    val completedStore = toDoStore.sub(L.ToDo.completed)
+            changes.states() handledBy ToDoListStore.toggleAll
+        }
+        label {
+            `for`("toggle-all")
+            +"Mark all as complete"
+        }
+        ul("todo-list") {
+            ToDoListStore.data.combine(router.data) { all, route ->
+                filters[route]?.function?.invoke(all) ?: all
+            }.renderEach(ToDo::id) { toDo ->
+                val toDoStore = storeOf(toDo)
+                toDoStore.syncBy(ToDoListStore.save)
+                val textStore = toDoStore.sub(L.ToDo.text)
+                val completedStore = toDoStore.sub(L.ToDo.completed)
 
-                    val editingStore = storeOf(false)
+                val editingStore = storeOf(false)
 
-                    li {
-                        attr("data-id", toDoStore.id)
-                        classMap(toDoStore.data.combine(editingStore.data) { toDo, isEditing ->
-                            mapOf(
-                                "completed" to toDo.completed,
-                                "editing" to isEditing
-                            )
-                        })
-                        div("view") {
-                            input("toggle") {
-                                type("checkbox")
-                                checked(completedStore.data)
+                li {
+                    attr("data-id", toDoStore.id)
+                    classMap(toDoStore.data.combine(editingStore.data) { toDo, isEditing ->
+                        mapOf(
+                            "completed" to toDo.completed,
+                            "editing" to isEditing
+                        )
+                    })
+                    div("view") {
+                        input("toggle") {
+                            type("checkbox")
+                            checked(completedStore.data)
 
-                                changes.states() handledBy completedStore.update
-                            }
-                            label {
-                                textStore.data.asText()
-
-                                dblclicks.map { true } handledBy editingStore.update
-                            }
-                            button("destroy") {
-                                clicks.events.map { toDo.id } handledBy ToDoListStore.remove
-                            }
+                            changes.states() handledBy completedStore.update
                         }
-                        input("edit") {
-                            value(textStore.data)
-                            changes.values() handledBy textStore.update
+                        label {
+                            textStore.data.asText()
 
-                            editingStore.data.map { isEditing ->
-                                if (isEditing) domNode.apply {
-                                    focus()
-                                    select()
-                                }
-                                isEditing.toString()
-                            }.watch()
-                            merge(
-                                blurs.map { false },
-                                keyups.key().filter { it.isKey(Keys.Enter) }.map { false }
-                            ) handledBy editingStore.update
+                            dblclicks.map { true } handledBy editingStore.update
                         }
+                        button("destroy") {
+                            clicks.events.map { toDo.id } handledBy ToDoListStore.remove
+                        }
+                    }
+                    input("edit") {
+                        value(textStore.data)
+                        changes.values() handledBy textStore.update
+
+                        editingStore.data.map { isEditing ->
+                            if (isEditing) domNode.apply {
+                                focus()
+                                select()
+                            }
+                            isEditing.toString()
+                        }.watch()
+                        merge(
+                            blurs.map { false },
+                            keyups.key().filter { it.isKey(Keys.Enter) }.map { false }
+                        ) handledBy editingStore.update
                     }
                 }
             }
         }
     }
+}
 
-    val appFooter = render {
-        footer("footer") {
-            className(ToDoListStore.empty.map { if (it) "hidden" else "" })
+fun RenderContext.appFooter() {
+    footer("footer") {
+        className(ToDoListStore.empty.map { if (it) "hidden" else "" })
 
-            span("todo-count") {
-                strong {
-                    ToDoListStore.count.map {
-                        "$it item${if (it != 1) "s" else ""} left"
-                    }.asText()
-                }
-            }
-
-            ul("filters") {
-                filters.forEach { filter(it.value.text, it.key) }
-            }
-            button("clear-completed") {
-                +"Clear completed"
-
-                clicks handledBy ToDoListStore.clearCompleted
+        span("todo-count") {
+            strong {
+                ToDoListStore.count.map {
+                    "$it item${if (it != 1) "s" else ""} left"
+                }.asText()
             }
         }
-    }
 
-    append("todoapp", inputHeader, mainSection, appFooter)
+        ul("filters") {
+            filters.forEach { filter(it.value.text, it.key) }
+        }
+        button("clear-completed") {
+            +"Clear completed"
+
+            clicks handledBy ToDoListStore.clearCompleted
+        }
+    }
+}
+
+@ExperimentalCoroutinesApi
+fun main() {
+    render("#todoapp") {
+        inputHeader()
+        mainSection()
+        appFooter()
+    }
 }

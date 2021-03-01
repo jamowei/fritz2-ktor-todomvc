@@ -1,19 +1,21 @@
 plugins {
     application
     id("dev.fritz2.fritz2-gradle") version "0.8"
-    kotlin("plugin.serialization") version "1.4.10"
+    kotlin("plugin.serialization") version "1.4.30"
+    kotlin("multiplatform") version "1.4.30"
 }
 
 group = "dev.fritz2"
 version = "1.0"
 
 repositories {
+    maven("https://oss.jfrog.org/artifactory/jfrog-dependencies")
     jcenter()
     mavenCentral()
-    maven { url = uri("https://dl.bintray.com/jwstegemann/fritz2") }
-    maven { url = uri("https://dl.bintray.com/kotlin/kotlin-js-wrappers") }
-    maven { url = uri("https://dl.bintray.com/kotlin/kotlinx") }
-    maven { url = uri("https://dl.bintray.com/kotlin/ktor") }
+    maven("https://dl.bintray.com/jwstegemann/fritz2")
+    maven("https://dl.bintray.com/kotlin/kotlin-js-wrappers")
+    maven("https://dl.bintray.com/kotlin/kotlinx")
+    maven("https://dl.bintray.com/kotlin/ktor")
 }
 
 application {
@@ -48,12 +50,13 @@ kotlin {
     sourceSets {
         val ktorVersion = "1.4.2"
         val logbackVersion = "1.2.3"
-        val serializationVersion = "1.0.1"
-        val exposedVersion = "0.28.1"
+        val serializationVersion = "1.1.0"
+        val exposedVersion = "0.29.1"
         val h2Version = "1.4.200"
 
         val commonMain by getting {
             dependencies {
+                implementation("dev.fritz2:core:0.9-SNAPSHOT")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
             }
         }
