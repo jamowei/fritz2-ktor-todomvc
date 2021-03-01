@@ -21,12 +21,6 @@ val filters = mapOf(
     "completed" to Filter("Completed") { toDos -> toDos.filter { it.completed } }
 )
 
-//val toDoResource = Resource(
-//    ToDo::id,
-//    ToDoResource,
-//    ToDo()
-//)
-
 const val endpoint = "/api/todos"
 val validator = ToDoValidator()
 val router = router("all")
