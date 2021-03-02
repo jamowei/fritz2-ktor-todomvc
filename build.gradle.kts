@@ -1,6 +1,6 @@
 plugins {
     application
-    id("dev.fritz2.fritz2-gradle") version "0.9-SNAPSHOT"
+    id("dev.fritz2.fritz2-gradle") version "0.9"
     kotlin("plugin.serialization") version "1.4.30"
     kotlin("multiplatform") version "1.4.30"
 }
@@ -9,7 +9,6 @@ group = "dev.fritz2"
 version = "1.0"
 
 repositories {
-    maven("https://oss.jfrog.org/artifactory/jfrog-dependencies")
     jcenter()
     mavenCentral()
     maven("https://dl.bintray.com/jwstegemann/fritz2")
@@ -47,7 +46,7 @@ kotlin {
     }
 
     sourceSets {
-        val fritz2Version = "0.9-SNAPSHOT"
+        val fritz2Version = "0.9"
         val ktorVersion = "1.4.2"
         val logbackVersion = "1.2.3"
         val serializationVersion = "1.1.0"
