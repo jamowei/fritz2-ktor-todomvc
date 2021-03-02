@@ -1,6 +1,6 @@
 plugins {
     application
-    id("dev.fritz2.fritz2-gradle") version "0.8"
+    id("dev.fritz2.fritz2-gradle") version "0.9-SNAPSHOT"
     kotlin("plugin.serialization") version "1.4.30"
     kotlin("multiplatform") version "1.4.30"
 }
@@ -23,8 +23,7 @@ application {
 }
 
 kotlin {
-
-    js(LEGACY) {
+    js(IR) {
         browser {
             runTask {
                 devServer = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.DevServer(
@@ -36,7 +35,7 @@ kotlin {
                 )
             }
         }
-    }
+    }.binaries.executable()
 
     jvm {
         compilations.all {
@@ -48,6 +47,7 @@ kotlin {
     }
 
     sourceSets {
+        val fritz2Version = "0.9-SNAPSHOT"
         val ktorVersion = "1.4.2"
         val logbackVersion = "1.2.3"
         val serializationVersion = "1.1.0"
@@ -56,7 +56,7 @@ kotlin {
 
         val commonMain by getting {
             dependencies {
-                implementation("dev.fritz2:core:0.9-SNAPSHOT")
+                implementation("dev.fritz2:core:$fritz2Version")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
             }
         }
