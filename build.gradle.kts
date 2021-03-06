@@ -25,9 +25,8 @@ kotlin {
     js(IR) {
         browser {
             runTask {
-                devServer = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.DevServer(
+                devServer = devServer?.copy(
                     port = 9000,
-                    contentBase = listOf("$buildDir/distributions"),
                     proxy = mapOf(
                         "/api/todos" to "http://localhost:8080"
                     )
