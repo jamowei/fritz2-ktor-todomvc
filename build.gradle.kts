@@ -9,9 +9,8 @@ group = "dev.fritz2"
 version = "1.0"
 
 repositories {
-    jcenter()
     mavenCentral()
-    maven("https://dl.bintray.com/jwstegemann/fritz2")
+    jcenter()
     maven("https://dl.bintray.com/kotlin/kotlin-js-wrappers")
     maven("https://dl.bintray.com/kotlin/kotlinx")
     maven("https://dl.bintray.com/kotlin/ktor")
