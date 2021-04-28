@@ -1,6 +1,6 @@
 plugins {
     application
-    id("dev.fritz2.fritz2-gradle") version "0.9"
+    id("dev.fritz2.fritz2-gradle") version "0.10"
     kotlin("plugin.serialization") version "1.4.30"
     kotlin("multiplatform") version "1.4.30"
 }
@@ -10,7 +10,7 @@ version = "1.0"
 
 repositories {
     mavenCentral()
-    jcenter()
+    maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
     maven("https://dl.bintray.com/kotlin/kotlin-js-wrappers")
     maven("https://dl.bintray.com/kotlin/kotlinx")
     maven("https://dl.bintray.com/kotlin/ktor")
@@ -44,11 +44,11 @@ kotlin {
     }
 
     sourceSets {
-        val fritz2Version = "0.9"
+        val fritz2Version = "0.10"
         val ktorVersion = "1.4.2"
         val logbackVersion = "1.2.3"
         val serializationVersion = "1.1.0"
-        val exposedVersion = "0.29.1"
+        val exposedVersion = "0.31.1"
         val h2Version = "1.4.200"
 
         val commonMain by getting {

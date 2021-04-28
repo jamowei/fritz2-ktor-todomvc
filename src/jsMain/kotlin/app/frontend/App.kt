@@ -152,7 +152,7 @@ fun RenderContext.mainSection() {
                         }.watch()
                         merge(
                             blurs.map { false },
-                            keyups.key().filter { it.isKey(Keys.Enter) }.map { false }
+                            keyups.key().filter { it == Keys.Enter }.map { false }
                         ) handledBy editingStore.update
                     }
                 }
