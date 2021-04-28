@@ -11,9 +11,6 @@ version = "1.0"
 repositories {
     mavenCentral()
     maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-    maven("https://dl.bintray.com/kotlin/kotlin-js-wrappers")
-    maven("https://dl.bintray.com/kotlin/kotlinx")
-    maven("https://dl.bintray.com/kotlin/ktor")
 }
 
 application {
