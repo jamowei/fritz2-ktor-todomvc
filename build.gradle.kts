@@ -1,8 +1,8 @@
 plugins {
     application
-    id("dev.fritz2.fritz2-gradle") version "0.10"
-    kotlin("plugin.serialization") version "1.4.30"
-    kotlin("multiplatform") version "1.4.30"
+    id("dev.fritz2.fritz2-gradle") version "0.11"
+    kotlin("plugin.serialization") version "1.5.10"
+    kotlin("multiplatform") version "1.5.10"
 }
 
 group = "dev.fritz2"
@@ -23,7 +23,7 @@ kotlin {
             runTask {
                 devServer = devServer?.copy(
                     port = 9000,
-                    proxy = mapOf(
+                    proxy = mutableMapOf(
                         "/api/todos" to "http://localhost:8080"
                     )
                 )
@@ -41,16 +41,14 @@ kotlin {
     }
 
     sourceSets {
-        val fritz2Version = "0.10"
-        val ktorVersion = "1.4.2"
+        val ktorVersion = "1.6.0"
         val logbackVersion = "1.2.3"
-        val serializationVersion = "1.1.0"
-        val exposedVersion = "0.31.1"
+        val serializationVersion = "1.2.1"
+        val exposedVersion = "0.32.1"
         val h2Version = "1.4.200"
 
         val commonMain by getting {
             dependencies {
-                implementation("dev.fritz2:core:$fritz2Version")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
             }
         }
